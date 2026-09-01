@@ -8,6 +8,7 @@ interface StakeHeaderProps {
     onCurrencyChange: (c: CurrencyType) => void;
     onOpenWallet: () => void;
     onOpenAuth?: () => void;
+    onOpenAdminRtp?: () => void;
     isLoggedIn: boolean;
     userEmail?: string;
     onLogout?: () => void;
@@ -25,6 +26,7 @@ export const StakeHeader: React.FC<StakeHeaderProps> = ({
     onCurrencyChange,
     onOpenWallet,
     onOpenAuth,
+    onOpenAdminRtp,
     isLoggedIn,
     userEmail,
     onLogout,
@@ -314,25 +316,28 @@ export const StakeHeader: React.FC<StakeHeaderProps> = ({
                             )}
                         </div>
 
-                        {/* VIP Progress Badge */}
-                        <div style={{
-                            display: 'none',
-                            alignItems: 'center',
-                            gap: '8px',
-                            background: 'var(--bg-main)',
-                            padding: '6px 12px',
-                            borderRadius: 'var(--radius-md)',
-                            border: '1px solid var(--border-subtle)',
-                            cursor: 'pointer'
-                        }} className="vip-badge-desktop">
-                            <span style={{ fontSize: '1.1rem' }}>🏆</span>
-                            <div>
-                                <div style={{ fontSize: '0.68rem', color: 'var(--stake-gold)', fontWeight: 800 }}>BRONZE VIP</div>
-                                <div style={{ width: '60px', height: '4px', background: 'var(--bg-elevated)', borderRadius: '2px', overflow: 'hidden', marginTop: '2px' }}>
-                                    <div style={{ width: '68%', height: '100%', background: 'var(--stake-gold)' }}></div>
-                                </div>
-                            </div>
-                        </div>
+                        {/* Admin RTP Control Button */}
+                        {onOpenAdminRtp && (
+                            <button
+                                onClick={onOpenAdminRtp}
+                                style={{
+                                    background: 'linear-gradient(135deg, #78350f 0%, #b45309 50%, #f59e0b 100%)',
+                                    color: '#000',
+                                    border: '1px solid #fff',
+                                    borderRadius: 'var(--radius-md)',
+                                    padding: '8px 14px',
+                                    fontWeight: 900,
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    boxShadow: '0 0 15px rgba(245, 158, 11, 0.6)'
+                                }}
+                            >
+                                <span>👑</span> ADMIN RTP
+                            </button>
+                        )}
 
                         {/* User Profile Avatar */}
                         <div style={{ position: 'relative' }}>

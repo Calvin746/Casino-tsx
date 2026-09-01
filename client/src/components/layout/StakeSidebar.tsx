@@ -1,19 +1,21 @@
 import React from 'react';
 
-export type GameView = 'LOBBY' | 'SLOT3D' | 'ROULETTE3D' | 'MINES' | 'CRASH' | 'WALKTHROUGH3D' | 'PROMOTIONS';
+export type GameView = 'LOBBY' | 'SLOT3D' | 'ROULETTE3D' | 'MINES' | 'CRASH' | 'WALKTHROUGH3D' | 'PROMOTIONS' | 'ADMIN_DASHBOARD';
 
 interface StakeSidebarProps {
     isOpen: boolean;
     activeView: GameView;
     onSelectView: (view: GameView) => void;
     onOpenPromo: (promoId?: string) => void;
+    isAdmin?: boolean;
 }
 
 export const StakeSidebar: React.FC<StakeSidebarProps> = ({
     isOpen,
     activeView,
     onSelectView,
-    onOpenPromo
+    onOpenPromo,
+    isAdmin = false
 }) => {
     return (
         <aside style={{
@@ -30,6 +32,32 @@ export const StakeSidebar: React.FC<StakeSidebarProps> = ({
             flexShrink: 0
         }}>
             <div style={{ padding: '16px 10px' }}>
+                {/* Section: Admin Dashboard (Only visible for Admins!) */}
+                {isAdmin && (
+                    <div style={{ marginBottom: '16px' }}>
+                        <button
+                            onClick={() => onSelectView('ADMIN_DASHBOARD')}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '14px',
+                                width: '100%',
+                                padding: '10px 14px',
+                                borderRadius: 'var(--radius-md)',
+                                border: '1px solid #f59e0b',
+                                background: activeView === 'ADMIN_DASHBOARD' ? '#78350f' : 'rgba(245, 158, 11, 0.1)',
+                                color: '#f59e0b',
+                                fontWeight: 900,
+                                cursor: 'pointer',
+                                fontSize: '0.9rem'
+                            }}
+                        >
+                            <span style={{ fontSize: '1.2rem' }}>👑</span>
+                            {isOpen && <span>Admin Dashboard</span>}
+                        </button>
+                    </div>
+                )}
+
                 {/* Section: Main Games */}
                 <div style={{ marginBottom: '20px' }}>
                     {isOpen && (

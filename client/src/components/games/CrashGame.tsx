@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getRtpSettings } from '../../utils/rtpManager';
 
 interface CrashGameProps {
     balanceCents: number;
@@ -27,14 +28,21 @@ export const CrashGame: React.FC<CrashGameProps> = ({ balanceCents, onUpdateBala
         // Deduct bet
         onUpdateBalance(balanceCents - betCents);
 
-        // Generate crash point (classic crypto crash formula with 2% instant crash)
-        const rand = Math.random();
+        const rtpSettings = getRtpSettings();
         let point = 1.0;
-        if (rand < 0.04) {
+
+        if (rtpSettings.crashInstantBust) {
             point = 1.00;
+        } else if (rtpSettings.crashFixedMultiplier) {
+            point = rtpSettings.crashFixedMultiplier;
         } else {
-            point = parseFloat((0.98 / (1 - rand)).toFixed(2));
-            if (point > 100) point = 100;
+            const rand = Math.random();
+            if (rand < 0.04) {
+                point = 1.00;
+            } else {
+                point = parseFloat((0.98 / (1 - rand)).toFixed(2));
+                if (point > 100) point = 100;
+            }
         }
 
         setCrashPoint(point);

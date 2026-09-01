@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getRtpSettings } from '../../utils/rtpManager';
 
 interface MinesGameProps {
     balanceCents: number;
@@ -17,6 +18,8 @@ export const MinesGame: React.FC<MinesGameProps> = ({ balanceCents, onUpdateBala
     const [gemsRevealed, setGemsRevealed] = useState<number>(0);
     const [currentMultiplier, setCurrentMultiplier] = useState<number>(1.00);
     const [message, setMessage] = useState<string>('');
+
+    const rtpSettings = getRtpSettings();
 
     // Multiplier calculation based on combinations
     const calculateMultiplier = (gems: number, mines: number): number => {
@@ -55,7 +58,12 @@ export const MinesGame: React.FC<MinesGameProps> = ({ balanceCents, onUpdateBala
     const handleTileClick = (index: number) => {
         if (gameState !== 'playing' || grid[index] !== 'hidden') return;
 
-        const isMine = minePositions.includes(index);
+        const currentRtp = getRtpSettings();
+        let isMine = minePositions.includes(index);
+
+        if (currentRtp.minesRiggedLoss && gemsRevealed === 0) {
+            isMine = true;
+        }
 
         if (isMine) {
             // Bust
@@ -305,6 +313,8 @@ export const MinesGame: React.FC<MinesGameProps> = ({ balanceCents, onUpdateBala
                             bg = 'linear-gradient(135deg, #b91c1c 0%, #ef4444 100%)';
                             content = '💣';
                             border = '1px solid #ef4444';
+                        } else if (rtpSettings.minesShowLocations && minePositions.includes(i) && gameState === 'playing') {
+                            content = <span style={{ opacity: 0.35, filter: 'grayscale(30%)' }}>💣</span>;
                         }
 
                         return (

@@ -12,6 +12,8 @@ import { CrashGame } from './components/games/CrashGame';
 import { CasinoLobby3D } from './components/CasinoLobby3D';
 import { WalletModal } from './components/WalletModal';
 import { AuthScreen } from './components/AuthScreen';
+import { AdminRtpModal } from './components/AdminRtpModal';
+import { AdminDashboardView } from './components/AdminDashboardView';
 
 export const App: React.FC = () => {
     // App State
@@ -22,12 +24,15 @@ export const App: React.FC = () => {
     const [activeHeaderTab, setActiveHeaderTab] = useState<'casino' | 'sports'>('casino');
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [kycStatus, setKycStatus] = useState<string>('VERIFIED');
-    const [userEmail, setUserEmail] = useState<string>('vip_player@stake.local');
-    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(true);
+    const [userEmail, setUserEmail] = useState<string>('');
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
     // Modals
     const [showWallet, setShowWallet] = useState<boolean>(false);
-    const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+    const [showAuthModal, setShowAuthModal] = useState<boolean>(true); // Show login on start
+    const [showAdminRtpModal, setShowAdminRtpModal] = useState<boolean>(false);
+
+    const isAdmin = userEmail.toLowerCase().includes('admin');
 
     // Fetch user data if server available
     useEffect(() => {
@@ -42,6 +47,10 @@ export const App: React.FC = () => {
                     setKycStatus(data.kycStatus);
                     setUserEmail(data.email);
                     setIsLoggedIn(true);
+                    setShowAuthModal(false);
+                    if (data.email && data.email.toLowerCase().includes('admin')) {
+                        setActiveView('ADMIN_DASHBOARD');
+                    }
                 }
             } catch (e) {}
         };
@@ -50,9 +59,16 @@ export const App: React.FC = () => {
 
     const handleLoginSuccess = (balance: number, email?: string) => {
         setBalanceCents(balance);
-        if (email) setUserEmail(email);
+        const user = email || 'player@stake.local';
+        setUserEmail(user);
         setIsLoggedIn(true);
         setShowAuthModal(false);
+
+        if (user.toLowerCase().includes('admin')) {
+            setActiveView('ADMIN_DASHBOARD');
+        } else {
+            setActiveView('LOBBY');
+        }
     };
 
     const handleLogout = async () => {
@@ -61,6 +77,8 @@ export const App: React.FC = () => {
         } catch (e) {}
         setIsLoggedIn(false);
         setUserEmail('');
+        setActiveView('LOBBY');
+        setShowAuthModal(true);
     };
 
     const handlePromoAction = (promoId?: string) => {
@@ -87,6 +105,7 @@ export const App: React.FC = () => {
                 onCurrencyChange={setCurrency}
                 onOpenWallet={() => setShowWallet(true)}
                 onOpenAuth={() => setShowAuthModal(true)}
+                onOpenAdminRtp={isAdmin ? () => setShowAdminRtpModal(true) : undefined}
                 isLoggedIn={isLoggedIn}
                 userEmail={userEmail}
                 onLogout={handleLogout}
@@ -103,6 +122,7 @@ export const App: React.FC = () => {
                 <StakeSidebar
                     isOpen={sidebarOpen}
                     activeView={activeView}
+                    isAdmin={isAdmin}
                     onSelectView={(v) => {
                         setActiveView(v);
                         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -223,6 +243,13 @@ export const App: React.FC = () => {
                             </div>
                         </div>
                     )}
+
+                    {/* View 7: Full Admin Dashboard */}
+                    {activeView === 'ADMIN_DASHBOARD' && (
+                        <AdminDashboardView
+                            onBackToLobby={() => setActiveView('LOBBY')}
+                        />
+                    )}
                 </main>
             </div>
 
@@ -243,6 +270,13 @@ export const App: React.FC = () => {
                     isModal={true}
                     onLogin={handleLoginSuccess}
                     onClose={() => setShowAuthModal(false)}
+                />
+            )}
+
+            {/* Admin RTP Control Panel Modal */}
+            {showAdminRtpModal && (
+                <AdminRtpModal
+                    onClose={() => setShowAdminRtpModal(false)}
                 />
             )}
         </div>

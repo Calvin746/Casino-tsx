@@ -2,6 +2,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Environment, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
+import confetti from 'canvas-confetti';
+import { getRtpSettings } from '../utils/rtpManager';
 
 // 10 Premium Casino Symbols
 const SYMBOLS = ['7️⃣', '💎', '👑', '🍒', '🔔', '⭐', '🍇', 'BAR', '⚡', '🃏'];
@@ -61,6 +63,33 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
         ['💎', '7️⃣', '🍒'],
         ['👑', '⭐', '🔔']
     ]);
+
+    const triggerWinAnimation = () => {
+        const duration = 2500;
+        const end = Date.now() + duration;
+
+        const frame = () => {
+            confetti({
+                particleCount: 7,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 },
+                colors: ['#f59e0b', '#fbbf24', '#f87171']
+            });
+            confetti({
+                particleCount: 7,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 },
+                colors: ['#f59e0b', '#fbbf24', '#f87171']
+            });
+
+            if (Date.now() < end) {
+                requestAnimationFrame(frame);
+            }
+        };
+        frame();
+    };
 
     // Audio Synthesizer for 5-Reel Video Slot
     const playSlotSound = (type: 'spin' | 'reelStop' | 'win' | 'bigwin') => {
@@ -128,9 +157,11 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
         // Start all 5 reels spinning animation
         setReelStates([true, true, true, true, true]);
 
-        // Generate target 5x3 Grid
+        // Generate target 5x3 Grid based on Admin RTP settings
         const newGrid: string[][] = [];
-        const isWin = Math.random() < 0.42;
+        const rtpSettings = getRtpSettings();
+        const winChance = rtpSettings.slotWinChance / 100;
+        const isWin = Math.random() < winChance;
 
         if (isWin) {
             // Guarantee winning line
@@ -195,7 +226,15 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                     if (winCents > 0) {
                         setLastWin(winCents);
                         setWinningLines(hitLines);
-                        playSlotSound(winCents > betCents * 8 ? 'bigwin' : 'win');
+                        const isBigWin = winCents >= betCents * 5;
+                        playSlotSound(isBigWin ? 'bigwin' : 'win');
+                        
+                        if (isBigWin) {
+                            triggerBigWinAnimation();
+                        } else {
+                            triggerWinAnimation();
+                        }
+                        
                         const finalBal = balAfterBet + winCents;
                         setBalance(finalBal);
                         if (onUpdateBalance) onUpdateBalance(finalBal);
@@ -204,6 +243,68 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
             }, delay);
         });
     };
+
+    // Auto-Spin Logic
+    const [autoSpinning, setAutoSpinning] = useState<boolean>(false);
+    const autoSpinningRef = useRef<boolean>(false);
+    
+    useEffect(() => {
+        autoSpinningRef.current = autoSpinning;
+    }, [autoSpinning]);
+
+    useEffect(() => {
+        if (!spinning && autoSpinningRef.current) {
+            const timer = setTimeout(() => {
+                if (autoSpinningRef.current) {
+                    const betCents = Math.round(betEur * 100);
+                    if (balance >= betCents) {
+                        handleSpin();
+                    } else {
+                        setAutoSpinning(false);
+                    }
+                }
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [spinning, balance, betEur]);
+
+    const toggleAutoSpin = () => {
+        if (!autoSpinning) {
+            setAutoSpinning(true);
+            if (!spinning) handleSpin();
+        } else {
+            setAutoSpinning(false);
+        }
+    };
+
+    const triggerBigWinAnimation = () => {
+        const duration = 5000;
+        const end = Date.now() + duration;
+
+        const frame = () => {
+            confetti({
+                particleCount: 15,
+                angle: 60,
+                spread: 80,
+                origin: { x: 0 },
+                colors: ['#f59e0b', '#fbbf24', '#f87171', '#a855f7', '#38bdf8']
+            });
+            confetti({
+                particleCount: 15,
+                angle: 120,
+                spread: 80,
+                origin: { x: 1 },
+                colors: ['#f59e0b', '#fbbf24', '#f87171', '#a855f7', '#38bdf8']
+            });
+
+            if (Date.now() < end) {
+                requestAnimationFrame(frame);
+            }
+        };
+        frame();
+    };
+
+    const isBigWinNow = lastWin >= Math.round(betEur * 100) * 5;
 
     return (
         <div style={{
@@ -215,8 +316,46 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
             flexDirection: 'column',
             maxWidth: '1160px',
             margin: '0 auto',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.65)'
+            boxShadow: '0 20px 60px rgba(0,0,0,0.65)',
+            position: 'relative'
         }}>
+            {/* BIG WIN OVERLAY */}
+            {isBigWinNow && !spinning && (
+                <div style={{
+                    position: 'absolute',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.7)',
+                    zIndex: 100,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    pointerEvents: 'none',
+                    animation: 'fadeIn 0.5s ease-out'
+                }}>
+                    <h1 style={{
+                        fontSize: '6rem',
+                        color: '#f59e0b',
+                        textShadow: '0 0 30px #f59e0b, 0 0 60px #fbbf24, 0 0 90px #fff',
+                        margin: 0,
+                        animation: 'pulseGlow 0.8s infinite alternate',
+                        fontFamily: 'var(--font-display)',
+                        WebkitTextStroke: '3px #fff'
+                    }}>
+                        MEGA WIN!
+                    </h1>
+                    <div style={{
+                        fontSize: '3.5rem',
+                        fontWeight: 900,
+                        color: '#fff',
+                        textShadow: '0 0 20px #10b981',
+                        marginTop: '20px'
+                    }}>
+                        +{(lastWin / 100).toFixed(2)} €
+                    </div>
+                </div>
+            )}
+
             {/* Top Bar */}
             <header style={{
                 padding: '16px 24px',
@@ -366,7 +505,9 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                                                     boxShadow: isCellWinning ? '0 0 25px rgba(245, 158, 11, 0.8)' : 'none',
                                                     animation: isReelSpinning ? 'pulse 0.1s infinite alternate' : (isCellWinning ? 'pulseGlow 1s infinite' : 'none'),
                                                     filter: isReelSpinning ? 'blur(4px)' : 'none',
-                                                    transition: 'all 0.15s'
+                                                    transition: 'all 0.15s',
+                                                    zIndex: isCellWinning ? 10 : 1,
+                                                    position: 'relative'
                                                 }}
                                             >
                                                 {isReelSpinning ? SYMBOLS[(rowIdx + Math.floor(Math.random() * 8)) % SYMBOLS.length] : symbol}
@@ -380,7 +521,7 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                 </div>
 
                 {/* Win Notification Banner */}
-                {lastWin > 0 && !spinning && (
+                {lastWin > 0 && !spinning && !isBigWinNow && (
                     <div style={{
                         marginTop: '24px',
                         background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
@@ -421,7 +562,7 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                             <button
                                 key={val}
                                 onClick={() => setBetEur(val)}
-                                disabled={spinning}
+                                disabled={spinning || autoSpinning}
                                 style={{
                                     background: betEur === val ? 'var(--stake-green)' : 'transparent',
                                     color: betEur === val ? '#052205' : 'var(--text-white)',
@@ -429,7 +570,7 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                                     fontSize: '0.85rem',
                                     padding: '10px 14px',
                                     border: 'none',
-                                    cursor: spinning ? 'not-allowed' : 'pointer'
+                                    cursor: (spinning || autoSpinning) ? 'not-allowed' : 'pointer'
                                 }}
                             >
                                 {val.toFixed(2)} €
@@ -440,8 +581,22 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <button
+                        onClick={toggleAutoSpin}
+                        className={autoSpinning ? "stake-btn stake-btn-secondary" : "stake-btn stake-btn-secondary"}
+                        style={{
+                            padding: '16px 24px',
+                            fontSize: '1.1rem',
+                            fontWeight: 800,
+                            border: autoSpinning ? '2px solid #ef4444' : '2px solid transparent',
+                            color: autoSpinning ? '#ef4444' : '#fff'
+                        }}
+                    >
+                        {autoSpinning ? '⏹ AUTO STOP' : '🔄 AUTO SPIN'}
+                    </button>
+                    
+                    <button
                         onClick={handleSpin}
-                        disabled={spinning || balance < Math.round(betEur * 100)}
+                        disabled={spinning || balance < Math.round(betEur * 100) || autoSpinning}
                         className="stake-btn stake-btn-green glow-green"
                         style={{
                             padding: '16px 54px',

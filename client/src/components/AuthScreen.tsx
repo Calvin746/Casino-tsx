@@ -59,14 +59,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onClose, isModa
 
     const content = (
         <div style={{
-            background: 'var(--bg-card)',
-            padding: '36px 32px',
-            borderRadius: 'var(--radius-lg)',
-            boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
-            border: '1px solid var(--border-strong)',
+            background: 'linear-gradient(145deg, rgba(30, 35, 45, 0.95) 0%, rgba(15, 20, 25, 0.98) 100%)',
+            padding: '40px 32px',
+            borderRadius: '24px',
+            boxShadow: '0 24px 64px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1)',
+            border: '1px solid rgba(255,255,255,0.05)',
+            backdropFilter: 'blur(20px)',
             width: '100%',
             maxWidth: '420px',
-            position: 'relative'
+            position: 'relative',
+            overflow: 'hidden'
         }}>
             {isModal && onClose && (
                 <button
@@ -122,44 +124,50 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onClose, isModa
                     padding: '14px',
                     fontSize: '0.95rem',
                     fontWeight: 800,
-                    marginBottom: '20px'
+                    marginBottom: '20px',
+                    borderRadius: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                 }}
             >
-                ⚡ Sofort als VIP-Gast spielen (100,00 € Startguthaben)
+                ⚡ Sofort als VIP-Gast spielen
             </button>
 
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                margin: '16px 0',
-                color: 'var(--text-secondary)',
+                margin: '20px 0',
+                color: 'rgba(255, 255, 255, 0.4)',
                 fontSize: '0.75rem',
                 textTransform: 'uppercase',
-                letterSpacing: '1px'
+                letterSpacing: '2px',
+                fontWeight: 600
             }}>
-                <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }}></div>
-                <span style={{ padding: '0 12px' }}>Oder mit E-Mail</span>
-                <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }}></div>
+                <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.1)' }}></div>
+                <span style={{ padding: '0 16px' }}>Oder mit E-Mail</span>
+                <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.1)' }}></div>
             </div>
 
             {error && (
                 <div style={{
-                    color: '#f87171',
-                    marginBottom: '16px',
-                    fontSize: '0.85rem',
+                    color: '#ff4d4f',
+                    marginBottom: '20px',
+                    fontSize: '0.9rem',
                     textAlign: 'center',
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    padding: '10px',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(239, 68, 68, 0.3)'
+                    background: 'rgba(255, 77, 79, 0.15)',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 77, 79, 0.3)',
+                    fontWeight: 500,
+                    backdropFilter: 'blur(4px)'
                 }}>
                     {error}
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '6px', fontWeight: 600 }}>
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', marginBottom: '8px', fontWeight: 600, letterSpacing: '0.5px' }}>
                         E-Mail Adresse
                     </label>
                     <input
@@ -170,18 +178,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onClose, isModa
                         required
                         style={{
                             width: '100%',
-                            padding: '12px',
-                            borderRadius: '6px',
-                            border: '1px solid var(--border-subtle)',
-                            background: 'var(--bg-main)',
+                            padding: '14px 16px',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: 'rgba(0,0,0,0.4)',
                             color: '#fff',
-                            outline: 'none'
+                            outline: 'none',
+                            fontSize: '1rem',
+                            transition: 'all 0.3s ease',
+                            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
                         }}
+                        onFocus={(e) => { e.target.style.border = '1px solid var(--stake-green)'; e.target.style.background = 'rgba(0,0,0,0.6)'; }}
+                        onBlur={(e) => { e.target.style.border = '1px solid rgba(255,255,255,0.1)'; e.target.style.background = 'rgba(0,0,0,0.4)'; }}
                     />
                 </div>
 
                 <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '6px', fontWeight: 600 }}>
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', marginBottom: '8px', fontWeight: 600, letterSpacing: '0.5px' }}>
                         Passwort
                     </label>
                     <input
@@ -193,13 +206,18 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onClose, isModa
                         minLength={8}
                         style={{
                             width: '100%',
-                            padding: '12px',
-                            borderRadius: '6px',
-                            border: '1px solid var(--border-subtle)',
-                            background: 'var(--bg-main)',
+                            padding: '14px 16px',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: 'rgba(0,0,0,0.4)',
                             color: '#fff',
-                            outline: 'none'
+                            outline: 'none',
+                            fontSize: '1rem',
+                            transition: 'all 0.3s ease',
+                            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
                         }}
+                        onFocus={(e) => { e.target.style.border = '1px solid var(--stake-green)'; e.target.style.background = 'rgba(0,0,0,0.6)'; }}
+                        onBlur={(e) => { e.target.style.border = '1px solid rgba(255,255,255,0.1)'; e.target.style.background = 'rgba(0,0,0,0.4)'; }}
                     />
                 </div>
 
@@ -208,12 +226,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onClose, isModa
                     disabled={loading}
                     className="stake-btn stake-btn-secondary"
                     style={{
-                        padding: '12px',
-                        fontWeight: 700,
-                        marginTop: '6px'
+                        padding: '14px',
+                        fontWeight: 800,
+                        marginTop: '10px',
+                        fontSize: '1rem',
+                        letterSpacing: '1px',
+                        borderRadius: '8px',
+                        background: 'linear-gradient(to right, #2a2e38, #343a46)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: '#fff',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer'
                     }}
+                    onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.4)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)'; }}
                 >
-                    {loading ? 'Lädt...' : (isLogin ? 'Einloggen' : 'Konto registrieren')}
+                    {loading ? 'LÄDT...' : (isLogin ? 'EINLOGGEN' : 'KONTO REGISTRIEREN')}
                 </button>
             </form>
 
