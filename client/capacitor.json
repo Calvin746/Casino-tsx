@@ -1,0 +1,9 @@
+{
+    "appId": "com.casino.app",
+    "appName": "Casino3D",
+    "webDir": "dist",
+    "server": {
+        "androidScheme": "https",
+        "cleartext": false
+    }
+}
