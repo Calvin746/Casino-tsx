@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
+import { Environment, Text, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 
-// European Roulette Numbers in precise wheel pocket order
+// European Roulette Numbers in exact wheel pocket order
 const ROULETTE_NUMBERS = [
     0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10,
     5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
@@ -15,131 +16,96 @@ function getNumberColor(num: number): 'green' | 'red' | 'black' {
     return RED_NUMBERS.has(num) ? 'red' : 'black';
 }
 
-interface RouletteWheelMeshProps {
+interface Wheel3DProps {
     isSpinning: boolean;
     winningNumber: number | null;
-    onBallSettled: () => void;
 }
 
-// 3D Realistic Roulette Wheel with colored pockets, brass frets, and ball physics
-const RealisticRouletteWheel: React.FC<RouletteWheelMeshProps> = ({ isSpinning, winningNumber, onBallSettled }) => {
+// Ultra-realistic 3D Roulette Wheel Assembly
+const PhotorealisticRouletteWheel: React.FC<Wheel3DProps> = ({ isSpinning, winningNumber }) => {
     const rotorRef = useRef<THREE.Group>(null!);
-    const ballGroupRef = useRef<THREE.Group>(null!);
-    const ballMeshRef = useRef<THREE.Mesh>(null!);
+    const ballRef = useRef<THREE.Mesh>(null!);
+    
+    const rotorSpeed = useRef<number>(0.6);
+    const ballSpeed = useRef<number>(0);
+    const ballRadius = useRef<number>(2.05);
+    const ballHeight = useRef<number>(0.32);
+    const ballAngle = useRef<number>(0);
+    const ballState = useRef<'idle' | 'rolling' | 'dropping' | 'settled'>('idle');
 
-    // Rotor physics state
-    const rotorAngleRef = useRef<number>(0);
-    const rotorSpeedRef = useRef<number>(0.5);
-
-    // Ball physics state
-    const ballAngleRef = useRef<number>(0);
-    const ballSpeedRef = useRef<number>(0);
-    const ballRadiusRef = useRef<number>(2.05);
-    const ballHeightRef = useRef<number>(0.32);
-    const ballStateRef = useRef<'idle' | 'rolling' | 'dropping' | 'settled'>('idle');
-    const hasReportedSettled = useRef<boolean>(false);
-
-    // Build the 37 colored pocket segments with brass frets
+    // 37 pockets with colors and number labels
     const pockets = useMemo(() => {
-        const items = [];
-        const count = ROULETTE_NUMBERS.length; // 37
+        const count = ROULETTE_NUMBERS.length;
         const angleStep = (Math.PI * 2) / count;
-
-        for (let i = 0; i < count; i++) {
-            const num = ROULETTE_NUMBERS[i];
+        return ROULETTE_NUMBERS.map((num, i) => {
             const colorType = getNumberColor(num);
             const hexColor = colorType === 'green' ? '#059669' : (colorType === 'red' ? '#dc2626' : '#18181b');
-            const angle = i * angleStep;
-
-            items.push({
+            return {
                 num,
                 colorType,
                 hexColor,
-                angle
-            });
-        }
-        return items;
+                angle: i * angleStep
+            };
+        });
     }, []);
 
     useEffect(() => {
         if (isSpinning) {
-            ballStateRef.current = 'rolling';
-            ballSpeedRef.current = 14.0; // High speed in opposite direction
-            ballRadiusRef.current = 2.05; // Outer track
-            ballHeightRef.current = 0.32;
-            rotorSpeedRef.current = 2.5; // Fast wheel
-            hasReportedSettled.current = false;
+            ballState.current = 'rolling';
+            ballSpeed.current = 14.0;
+            ballRadius.current = 2.05;
+            ballHeight.current = 0.32;
+            rotorSpeed.current = 2.4;
         }
     }, [isSpinning]);
 
     useFrame((_, delta) => {
         const dt = Math.min(delta, 0.1);
 
-        // 1. Wheel (Rotor) rotation
+        // Rotor rotation
         if (rotorRef.current) {
-            if (isSpinning) {
-                // Decelerate rotor slightly to normal cruise speed
-                rotorSpeedRef.current = THREE.MathUtils.lerp(rotorSpeedRef.current, 0.8, dt * 0.4);
-            } else {
-                rotorSpeedRef.current = THREE.MathUtils.lerp(rotorSpeedRef.current, 0.4, dt * 0.5);
-            }
-            rotorAngleRef.current += rotorSpeedRef.current * dt;
-            rotorRef.current.rotation.y = rotorAngleRef.current;
+            rotorSpeed.current = THREE.MathUtils.lerp(rotorSpeed.current, isSpinning ? 1.0 : 0.4, dt * 0.5);
+            rotorRef.current.rotation.y += rotorSpeed.current * dt;
         }
 
-        // 2. Ball physics simulation
-        if (ballGroupRef.current && ballMeshRef.current) {
-            if (ballStateRef.current === 'rolling') {
-                // Ball decelerates on outer track
-                ballSpeedRef.current -= dt * 2.2;
-                ballAngleRef.current -= ballSpeedRef.current * dt;
+        // Ball trajectory physics
+        if (ballRef.current) {
+            if (ballState.current === 'rolling') {
+                ballSpeed.current -= dt * 2.5;
+                ballAngle.current -= ballSpeed.current * dt;
 
-                if (ballSpeedRef.current < 4.5) {
-                    ballStateRef.current = 'dropping';
+                if (ballSpeed.current < 4.2) {
+                    ballState.current = 'dropping';
                 }
-            } else if (ballStateRef.current === 'dropping') {
-                // Ball drops down the conical slope toward the pockets
-                ballSpeedRef.current = THREE.MathUtils.lerp(ballSpeedRef.current, rotorSpeedRef.current, dt * 3.0);
-                ballRadiusRef.current = THREE.MathUtils.lerp(ballRadiusRef.current, 1.45, dt * 3.5);
-                ballHeightRef.current = THREE.MathUtils.lerp(ballHeightRef.current, 0.12, dt * 3.5);
-                ballAngleRef.current -= ballSpeedRef.current * dt;
+            } else if (ballState.current === 'dropping') {
+                ballSpeed.current = THREE.MathUtils.lerp(ballSpeed.current, rotorSpeed.current, dt * 3.5);
+                ballRadius.current = THREE.MathUtils.lerp(ballRadius.current, 1.48, dt * 3.5);
+                ballHeight.current = THREE.MathUtils.lerp(ballHeight.current, 0.12, dt * 3.5);
+                ballAngle.current -= ballSpeed.current * dt;
 
-                // Add bounce jitter over brass frets
-                const bounce = Math.abs(Math.sin(ballAngleRef.current * 18.5)) * 0.05 * (ballSpeedRef.current / 4);
-                ballMeshRef.current.position.y = ballHeightRef.current + bounce;
+                // Micro bounce jitter over brass frets
+                const bounce = Math.abs(Math.sin(ballAngle.current * 18.5)) * 0.04 * (ballSpeed.current / 3);
+                ballRef.current.position.y = ballHeight.current + bounce;
 
-                if (ballRadiusRef.current <= 1.48 && Math.abs(ballSpeedRef.current - rotorSpeedRef.current) < 0.8) {
-                    ballStateRef.current = 'settled';
+                if (ballRadius.current <= 1.50) {
+                    ballState.current = 'settled';
                 }
-            } else if (ballStateRef.current === 'settled') {
-                // Locked inside pocket, moves synchronously with the rotor
-                ballAngleRef.current += rotorSpeedRef.current * dt;
-                ballMeshRef.current.position.y = 0.11;
-
-                if (!hasReportedSettled.current && !isSpinning) {
-                    hasReportedSettled.current = true;
-                    onBallSettled();
-                }
+            } else if (ballState.current === 'settled') {
+                ballAngle.current += rotorSpeed.current * dt;
+                ballRef.current.position.y = 0.12;
             } else {
-                // Idle slowly orbiting with wheel
-                ballAngleRef.current += rotorSpeedRef.current * dt;
+                ballAngle.current += rotorSpeed.current * dt;
             }
 
-            // Position the ball in 3D polar coordinates
-            const bx = Math.cos(ballAngleRef.current) * ballRadiusRef.current;
-            const bz = Math.sin(ballAngleRef.current) * ballRadiusRef.current;
-            ballMeshRef.current.position.x = bx;
-            ballMeshRef.current.position.z = bz;
-            if (ballStateRef.current !== 'dropping') {
-                ballMeshRef.current.position.y = ballHeightRef.current;
-            }
+            ballRef.current.position.x = Math.cos(ballAngle.current) * ballRadius.current;
+            ballRef.current.position.z = Math.sin(ballAngle.current) * ballRadius.current;
         }
     });
 
     return (
-        <group position={[0, -0.3, 0]}>
-            {/* Outer Mahogany Polished Wood Bowl */}
-            <mesh>
+        <group position={[0, -0.2, 0]}>
+            {/* Outer Polished Mahogany Wood Bowl */}
+            <mesh receiveShadow>
                 <cylinderGeometry args={[2.55, 2.75, 0.5, 48]} />
                 <meshStandardMaterial color="#381808" roughness={0.2} metalness={0.3} />
             </mesh>
@@ -148,35 +114,34 @@ const RealisticRouletteWheel: React.FC<RouletteWheelMeshProps> = ({ isSpinning, 
                 <meshStandardMaterial color="#270e03" roughness={0.15} metalness={0.4} />
             </mesh>
 
-            {/* Ball Track / Upper Flange with Polished Brass */}
+            {/* Brass Outer Track Flange */}
             <mesh position={[0, 0.16, 0]}>
                 <cylinderGeometry args={[2.42, 2.42, 0.38, 48, 1, true]} />
                 <meshStandardMaterial color="#d97706" metalness={0.88} roughness={0.15} />
             </mesh>
 
-            {/* Brass Deflectors / Diamond Pins around the rim */}
+            {/* 8 Brass Diamond Deflectors (Pins) */}
             {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => {
-                const angle = (i * Math.PI) / 4;
+                const a = (i * Math.PI) / 4;
                 return (
-                    <mesh key={i} position={[Math.cos(angle) * 2.2, 0.24, Math.sin(angle) * 2.2]}>
+                    <mesh key={i} position={[Math.cos(a) * 2.2, 0.24, Math.sin(a) * 2.2]}>
                         <boxGeometry args={[0.08, 0.08, 0.14]} />
                         <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.05} />
                     </mesh>
                 );
             })}
 
-            {/* Rotating Inner Wheel Assembly (Rotor) */}
+            {/* Rotating Rotor */}
             <group ref={rotorRef} position={[0, 0.08, 0]}>
-                {/* Sloping Cone Apron with Chrome / Mirror Accent */}
+                {/* Sloped Cone Apron */}
                 <mesh position={[0, 0.02, 0]}>
                     <cylinderGeometry args={[1.65, 2.2, 0.24, 48]} />
                     <meshStandardMaterial color="#1e293b" roughness={0.3} metalness={0.6} />
                 </mesh>
 
-                {/* The 37 Realistic Colored Pockets with Brass Frets */}
+                {/* 37 Colored Pockets with 3D Number Labels & Brass Frets */}
                 <group position={[0, 0.04, 0]}>
                     {pockets.map((p, idx) => {
-                        const nextAngle = p.angle + (Math.PI * 2) / 37;
                         const midAngle = p.angle + (Math.PI / 37);
                         const r = 1.58;
                         const px = Math.cos(midAngle) * r;
@@ -184,17 +149,25 @@ const RealisticRouletteWheel: React.FC<RouletteWheelMeshProps> = ({ isSpinning, 
 
                         return (
                             <group key={idx}>
-                                {/* Pocket colored plate (Green / Red / Black) */}
+                                {/* Pocket colored box */}
                                 <mesh position={[px, 0.06, pz]} rotation={[0, -midAngle, 0]}>
                                     <boxGeometry args={[0.24, 0.04, 0.34]} />
-                                    <meshStandardMaterial 
-                                        color={p.hexColor} 
-                                        roughness={0.25} 
-                                        metalness={0.4} 
-                                    />
+                                    <meshStandardMaterial color={p.hexColor} roughness={0.25} metalness={0.4} />
                                 </mesh>
 
-                                {/* Brass Fret separator bar between pockets */}
+                                {/* Pocket Number Text */}
+                                <Text
+                                    position={[Math.cos(midAngle) * 1.78, 0.1, Math.sin(midAngle) * 1.78]}
+                                    rotation={[-Math.PI / 2, 0, -midAngle + Math.PI / 2]}
+                                    fontSize={0.11}
+                                    color="#ffffff"
+                                    anchorX="center"
+                                    anchorY="middle"
+                                >
+                                    {p.num.toString()}
+                                </Text>
+
+                                {/* Brass Fret bar */}
                                 <mesh position={[Math.cos(p.angle) * 1.62, 0.085, Math.sin(p.angle) * 1.62]} rotation={[0, -p.angle, 0]}>
                                     <boxGeometry args={[0.03, 0.05, 0.38]} />
                                     <meshStandardMaterial color="#fbbf24" metalness={0.95} roughness={0.08} />
@@ -204,13 +177,11 @@ const RealisticRouletteWheel: React.FC<RouletteWheelMeshProps> = ({ isSpinning, 
                     })}
                 </group>
 
-                {/* Inner Gold Cone / Turret */}
+                {/* Center Gold Turret */}
                 <mesh position={[0, 0.28, 0]}>
                     <coneGeometry args={[0.65, 0.65, 36]} />
                     <meshStandardMaterial color="#f59e0b" roughness={0.1} metalness={0.92} />
                 </mesh>
-
-                {/* Classical 4-arm Gold Turret Cross */}
                 <mesh position={[0, 0.52, 0]}>
                     <boxGeometry args={[1.5, 0.07, 0.07]} />
                     <meshStandardMaterial color="#fbbf24" roughness={0.08} metalness={0.95} />
@@ -219,20 +190,13 @@ const RealisticRouletteWheel: React.FC<RouletteWheelMeshProps> = ({ isSpinning, 
                     <boxGeometry args={[0.07, 0.07, 1.5]} />
                     <meshStandardMaterial color="#fbbf24" roughness={0.08} metalness={0.95} />
                 </mesh>
-                {/* Turret Center Sphere Cap */}
-                <mesh position={[0, 0.55, 0]}>
-                    <sphereGeometry args={[0.14, 16, 16]} />
-                    <meshStandardMaterial color="#fbbf24" roughness={0.05} metalness={0.95} />
-                </mesh>
             </group>
 
-            {/* The Rolling Ivory / Ceramic Ball */}
-            <group ref={ballGroupRef}>
-                <mesh ref={ballMeshRef} castShadow>
-                    <sphereGeometry args={[0.075, 24, 24]} />
-                    <meshStandardMaterial color="#ffffff" roughness={0.05} metalness={0.15} />
-                </mesh>
-            </group>
+            {/* Ivory Ball */}
+            <mesh ref={ballRef} position={[2.05, 0.32, 0]} castShadow>
+                <sphereGeometry args={[0.08, 24, 24]} />
+                <meshStandardMaterial color="#ffffff" roughness={0.05} metalness={0.1} />
+            </mesh>
         </group>
     );
 };
@@ -257,20 +221,19 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
     const [winningNumber, setWinningNumber] = useState<number | null>(null);
     const [lastWin, setLastWin] = useState<number>(0);
     const [history, setHistory] = useState<number[]>([14, 2, 0, 31, 9, 22, 17]);
-    const [message, setMessage] = useState<string>('Wähle Chips und klicke auf Zahlen oder Felder!');
+    const [message, setMessage] = useState<string>('Platziere deine Krypto-Chips auf dem Roulettetisch!');
 
     const totalBetEur = Array.from(bets.values()).reduce((sum, v) => sum + v, 0);
 
-    // Audio synthesizer for realistic roulette wheel spin and winning fanfares
-    const playRouletteAudio = (type: 'chip' | 'spin' | 'ball' | 'win') => {
+    const playAudio = (type: 'chip' | 'spin' | 'win') => {
         try {
             const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
             if (type === 'chip') {
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(800, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.05);
+                osc.frequency.setValueAtTime(750, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(250, ctx.currentTime + 0.05);
                 gain.gain.setValueAtTime(0.2, ctx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
                 osc.connect(gain);
@@ -282,7 +245,7 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
                 const gain = ctx.createGain();
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(180, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(90, ctx.currentTime + 1.2);
+                osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 1.2);
                 gain.gain.setValueAtTime(0.25, ctx.currentTime);
                 gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 1.2);
                 osc.connect(gain);
@@ -315,7 +278,7 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
             return;
         }
 
-        playRouletteAudio('chip');
+        playAudio('chip');
         const newBets = new Map(bets);
         newBets.set(type, currentBet + selectedChip);
         setBets(newBets);
@@ -338,7 +301,7 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
             alert('Nicht genügend Guthaben zum Verdoppeln!');
             return;
         }
-        playRouletteAudio('chip');
+        playAudio('chip');
         setBets(newBets);
     };
 
@@ -355,14 +318,12 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
         setSpinning(true);
         setWinningNumber(null);
         setLastWin(0);
-        setMessage('Kugel saust durch den Kessel...');
-        playRouletteAudio('spin');
+        setMessage('Kugel rollt durch den Kessel...');
+        playAudio('spin');
 
-        // Draw random winning number (0 - 36)
         const wonNum = Math.floor(Math.random() * 37);
         const wonColor = getNumberColor(wonNum);
 
-        // Simulated spin duration
         setTimeout(() => {
             setWinningNumber(wonNum);
             setSpinning(false);
@@ -401,10 +362,10 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
             if (onUpdateBalance) onUpdateBalance(finalBal);
 
             if (winCents > 0) {
-                playRouletteAudio('win');
+                playAudio('win');
                 setMessage(`🎉 ${wonNum} ${wonColor.toUpperCase()}! Gewinn: +${totalWinEur.toFixed(2)} €!`);
             } else {
-                setMessage(`${wonNum} ${wonColor.toUpperCase()}. Kein Treffer in dieser Runde.`);
+                setMessage(`${wonNum} ${wonColor.toUpperCase()}. Kein Gewinn.`);
             }
         }, 3400);
     };
@@ -415,11 +376,11 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--border-subtle)',
             padding: '24px',
-            maxWidth: '1120px',
+            maxWidth: '1140px',
             margin: '0 auto',
-            boxShadow: '0 16px 48px rgba(0,0,0,0.6)'
+            boxShadow: '0 20px 60px rgba(0,0,0,0.65)'
         }}>
-            {/* Header */}
+            {/* Top Bar */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                     {onBackToLobby && (
@@ -469,36 +430,36 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
                         })}
                     </div>
 
-                    <div style={{ color: 'var(--stake-green)', fontWeight: 800, fontSize: '1.1rem' }}>
+                    <div style={{ color: 'var(--stake-green)', fontWeight: 900, fontSize: '1.15rem' }}>
                         {(balance / 100).toFixed(2)} €
                     </div>
                 </div>
             </div>
 
-            {/* 3D Realistic Roulette Wheel Stage */}
+            {/* 3D Wheel Stage */}
             <div style={{
-                height: '320px',
+                height: '330px',
                 borderRadius: 'var(--radius-md)',
                 overflow: 'hidden',
-                background: 'radial-gradient(circle at center, #1e293b 0%, #090e15 100%)',
+                background: 'radial-gradient(circle at center, #1e293b 0%, #080c14 100%)',
                 position: 'relative',
                 border: '1px solid var(--border-subtle)',
                 marginBottom: '22px'
             }}>
                 <Canvas camera={{ position: [0, 4.4, 3.2], fov: 43 }}>
                     <ambientLight intensity={0.85} />
-                    <directionalLight position={[6, 12, 6]} intensity={2.5} castShadow />
-                    <directionalLight position={[-6, 8, -6]} intensity={1.2} />
-                    <pointLight position={[0, 2.8, 0]} intensity={2.0} color="#fbbf24" />
+                    <directionalLight position={[6, 12, 6]} intensity={2.6} castShadow />
+                    <pointLight position={[0, 2.8, 0]} intensity={2.2} color="#fbbf24" />
 
-                    <RealisticRouletteWheel 
+                    <PhotorealisticRouletteWheel 
                         isSpinning={spinning} 
                         winningNumber={winningNumber} 
-                        onBallSettled={() => {}} 
                     />
+                    <Environment preset="night" />
+                    <ContactShadows position={[0, -0.6, 0]} opacity={0.6} scale={6} blur={1.5} />
                 </Canvas>
 
-                {/* Big winning number badge in corner */}
+                {/* Winning number badge */}
                 {winningNumber !== null && (
                     <div style={{
                         position: 'absolute',
@@ -506,7 +467,7 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
                         left: '16px',
                         background: getNumberColor(winningNumber) === 'green' ? '#059669' : (getNumberColor(winningNumber) === 'red' ? '#dc2626' : '#111827'),
                         color: '#fff',
-                        padding: '10px 22px',
+                        padding: '10px 24px',
                         borderRadius: '12px',
                         fontWeight: 900,
                         fontSize: '1.8rem',
@@ -514,8 +475,7 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
                         border: '2px solid rgba(255,255,255,0.4)',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '12px',
-                        animation: 'pulseGlow 1.5s infinite ease'
+                        gap: '12px'
                     }}>
                         <span>{winningNumber}</span>
                         <span style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#fbbf24' }}>
@@ -543,16 +503,17 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
                 </div>
             </div>
 
-            {/* Casino Felt Table */}
+            {/* Casino Felt Table Layout with 3D Chips & Brass Dolly Marker */}
             <div style={{
                 background: 'linear-gradient(135deg, #064e3b 0%, #022c22 100%)',
                 padding: '22px',
                 borderRadius: 'var(--radius-md)',
                 border: '3px solid #047857',
                 boxShadow: 'inset 0 0 50px rgba(0,0,0,0.6)',
-                marginBottom: '20px'
+                marginBottom: '20px',
+                position: 'relative'
             }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '64px 1fr', gap: '8px', marginBottom: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '68px 1fr', gap: '8px', marginBottom: '10px' }}>
                     {/* 0 (Green) */}
                     <button
                         onClick={() => placeBet(0)}
@@ -567,10 +528,14 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
-                            justifyContent: 'center'
+                            justifyContent: 'center',
+                            position: 'relative'
                         }}
                     >
                         <span>0</span>
+                        {winningNumber === 0 && (
+                            <span style={{ position: 'absolute', top: '2px', right: '2px', fontSize: '1rem' }}>📌</span>
+                        )}
                         {bets.has(0) && (
                             <span style={{ fontSize: '0.72rem', color: '#fbbf24', fontWeight: 800 }}>{bets.get(0)}€</span>
                         )}
@@ -580,7 +545,7 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
                     <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(12, 1fr)',
-                        gridTemplateRows: 'repeat(3, 46px)',
+                        gridTemplateRows: 'repeat(3, 48px)',
                         gap: '4px'
                     }}>
                         {[
@@ -591,27 +556,33 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
                             row.map((num) => {
                                 const isRed = RED_NUMBERS.has(num);
                                 const hasBet = bets.has(num);
+                                const isWinner = winningNumber === num;
                                 return (
                                     <button
                                         key={num}
                                         onClick={() => placeBet(num)}
                                         style={{
-                                            background: hasBet ? (isRed ? '#ef4444' : '#334155') : (isRed ? '#dc2626' : '#18181b'),
-                                            color: '#fff',
-                                            border: hasBet ? '2px solid #fbbf24' : '1px solid rgba(255,255,255,0.2)',
+                                            background: isWinner ? '#f59e0b' : (hasBet ? (isRed ? '#ef4444' : '#334155') : (isRed ? '#dc2626' : '#18181b')),
+                                            color: isWinner ? '#000' : '#fff',
+                                            border: isWinner ? '3px solid #fff' : (hasBet ? '2px solid #fbbf24' : '1px solid rgba(255,255,255,0.2)'),
                                             borderRadius: '4px',
-                                            fontWeight: 800,
-                                            fontSize: '0.95rem',
+                                            fontWeight: 900,
+                                            fontSize: '1rem',
                                             cursor: 'pointer',
                                             display: 'flex',
                                             flexDirection: 'column',
                                             alignItems: 'center',
-                                            justifyContent: 'center'
+                                            justifyContent: 'center',
+                                            position: 'relative',
+                                            boxShadow: isWinner ? '0 0 20px #f59e0b' : 'none'
                                         }}
                                     >
                                         <span>{num}</span>
+                                        {isWinner && (
+                                            <span style={{ position: 'absolute', top: '2px', right: '2px', fontSize: '0.85rem' }}>📌</span>
+                                        )}
                                         {hasBet && (
-                                            <span style={{ fontSize: '0.65rem', color: '#fbbf24', marginTop: '-2px' }}>{bets.get(num)}€</span>
+                                            <span style={{ fontSize: '0.65rem', color: isWinner ? '#000' : '#fbbf24', marginTop: '-2px', fontWeight: 900 }}>{bets.get(num)}€</span>
                                         )}
                                     </button>
                                 );
@@ -621,7 +592,7 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
                 </div>
 
                 {/* Dozens & Outside Bets */}
-                <div style={{ marginLeft: '72px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ marginLeft: '76px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {/* Dozens */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
                         {[
@@ -679,7 +650,7 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
                 </div>
             </div>
 
-            {/* Chips & Controls */}
+            {/* Chips & Action Controls */}
             <div style={{
                 display: 'flex',
                 flexWrap: 'wrap',
@@ -692,7 +663,7 @@ export const Roulette3D: React.FC<Roulette3DProps> = ({
                     {[0.5, 1, 5, 25, 100].map(val => (
                         <button
                             key={val}
-                            onClick={() => { setSelectedChip(val); playRouletteAudio('chip'); }}
+                            onClick={() => { setSelectedChip(val); playAudio('chip'); }}
                             disabled={spinning}
                             style={{
                                 width: '44px',
