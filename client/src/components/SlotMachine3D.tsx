@@ -5,8 +5,20 @@ import * as THREE from 'three';
 
 // 10 Premium Casino Symbols
 const SYMBOLS = ['7️⃣', '💎', '👑', '🍒', '🔔', '⭐', '🍇', 'BAR', '⚡', '🃏'];
+const SYMBOL_COLORS: Record<string, string> = {
+    '7️⃣': '#ef4444',
+    '💎': '#38bdf8',
+    '👑': '#f59e0b',
+    '🍒': '#f43f5e',
+    '🔔': '#eab308',
+    '⭐': '#a855f7',
+    '🍇': '#8b5cf6',
+    'BAR': '#dc2626',
+    '⚡': '#eab308',
+    '🃏': '#10b981'
+};
 
-// 20 Paylines definition for 5x3 Grid
+// 20 Paylines definition for 5x3 Grid (rows 0, 1, 2 for reels 0..4)
 const PAYLINES = [
     [1, 1, 1, 1, 1], // Line 1: Middle horizontal
     [0, 0, 0, 0, 0], // Line 2: Top horizontal
@@ -19,87 +31,6 @@ const PAYLINES = [
     [1, 2, 2, 2, 1], // Line 9: Bottom arch
     [1, 0, 1, 2, 1], // Line 10: Zig-Zag
 ];
-
-// 3D Physical Cabinet with Animated 3D Pull Lever (Stab zum Ziehen)
-const SlotCabinetWithLever3D: React.FC<{
-    isSpinning: boolean;
-    leverPulled: boolean;
-    onLeverClick: () => void;
-}> = ({ isSpinning, leverPulled, onLeverClick }) => {
-    const leverArmRef = useRef<THREE.Group>(null!);
-
-    useFrame((_, delta) => {
-        if (leverArmRef.current) {
-            const targetZ = leverPulled ? 0.95 : 0;
-            leverArmRef.current.rotation.z = THREE.MathUtils.lerp(
-                leverArmRef.current.rotation.z,
-                targetZ,
-                delta * 14
-            );
-        }
-    });
-
-    return (
-        <group position={[0, 0, 0]}>
-            {/* Main Cabinet Frame */}
-            <mesh position={[0, 0, -0.6]} castShadow receiveShadow>
-                <boxGeometry args={[5.8, 3.8, 1.4]} />
-                <meshStandardMaterial color="#0f172a" roughness={0.3} metalness={0.8} />
-            </mesh>
-
-            {/* Vegas Gold Header */}
-            <mesh position={[0, 2.05, -0.2]}>
-                <boxGeometry args={[5.6, 0.7, 1.0]} />
-                <meshStandardMaterial color="#1e1b4b" roughness={0.2} metalness={0.8} />
-            </mesh>
-            <mesh position={[0, 2.05, 0.32]}>
-                <boxGeometry args={[5.2, 0.5, 0.06]} />
-                <meshStandardMaterial color="#f59e0b" roughness={0.1} metalness={0.9} />
-            </mesh>
-
-            {/* Chrome Window Bevel */}
-            <mesh position={[0, 0, 0.2]}>
-                <boxGeometry args={[5.4, 2.7, 0.1]} />
-                <meshStandardMaterial color="#e2e8f0" metalness={0.95} roughness={0.05} />
-            </mesh>
-
-            {/* 3D Physical Pull Lever (Der Stab zum Ziehen auf der rechten Seite) */}
-            <group 
-                position={[3.1, -0.2, 0.1]} 
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onLeverClick();
-                }}
-            >
-                {/* Brass Base Hub */}
-                <mesh rotation={[0, 0, Math.PI / 2]}>
-                    <cylinderGeometry args={[0.26, 0.26, 0.35, 24]} />
-                    <meshStandardMaterial color="#f59e0b" metalness={0.9} roughness={0.1} />
-                </mesh>
-
-                {/* Animated Rotating Shaft */}
-                <group ref={leverArmRef}>
-                    {/* Metallic Rod / Stab */}
-                    <mesh position={[0.1, 0.8, 0]}>
-                        <cylinderGeometry args={[0.055, 0.055, 1.6, 20]} />
-                        <meshStandardMaterial color="#f8fafc" metalness={0.98} roughness={0.02} />
-                    </mesh>
-                    {/* Red Grip Ball at Top */}
-                    <mesh position={[0.1, 1.65, 0]} castShadow>
-                        <sphereGeometry args={[0.24, 24, 24]} />
-                        <meshStandardMaterial 
-                            color="#dc2626" 
-                            roughness={0.1} 
-                            metalness={0.3} 
-                            emissive="#b91c1c"
-                            emissiveIntensity={0.2}
-                        />
-                    </mesh>
-                </group>
-            </group>
-        </group>
-    );
-};
 
 interface VideoSlot5x3Props {
     initialBalance: number;
@@ -117,12 +48,11 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
     const [balance, setBalance] = useState<number>(initialBalance || 10000);
     const [betEur, setBetEur] = useState<number>(1.00);
     const [spinning, setSpinning] = useState<boolean>(false);
-    const [leverPulled, setLeverPulled] = useState<boolean>(false);
     const [reelStates, setReelStates] = useState<boolean[]>([false, false, false, false, false]);
     const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
     const [lastWin, setLastWin] = useState<number>(0);
     const [winningLines, setWinningLines] = useState<number[]>([]);
-    
+
     // Current 5x3 Grid Symbols (5 columns, 3 rows each)
     const [grid, setGrid] = useState<string[][]>([
         ['7️⃣', '💎', '👑'],
@@ -132,23 +62,12 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
         ['👑', '⭐', '🔔']
     ]);
 
-    const playSlotSound = (type: 'lever' | 'spin' | 'reelStop' | 'win' | 'bigwin') => {
+    // Audio Synthesizer for 5-Reel Video Slot
+    const playSlotSound = (type: 'spin' | 'reelStop' | 'win' | 'bigwin') => {
         if (!soundEnabled) return;
         try {
             const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-            if (type === 'lever') {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(140, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(35, ctx.currentTime + 0.18);
-                gain.gain.setValueAtTime(0.35, ctx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.18);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.18);
-            } else if (type === 'spin') {
+            if (type === 'spin') {
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = 'sawtooth';
@@ -186,9 +105,10 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                     osc.stop(ctx.currentTime + i * 0.08 + 0.35);
                 });
             }
-        } catch (e) {}
+        } catch (e) { }
     };
 
+    // Spin 5-Reels Video Slot
     const handleSpin = () => {
         const betCents = Math.round(betEur * 100);
         if (spinning || balance < betCents) {
@@ -196,11 +116,7 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
             return;
         }
 
-        // Pull 3D Lever animation
-        setLeverPulled(true);
-        playSlotSound('lever');
-        setTimeout(() => setLeverPulled(false), 380);
-
+        playSlotSound('spin');
         setSpinning(true);
         setLastWin(0);
         setWinningLines([]);
@@ -209,6 +125,7 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
         setBalance(balAfterBet);
         if (onUpdateBalance) onUpdateBalance(balAfterBet);
 
+        // Start all 5 reels spinning animation
         setReelStates([true, true, true, true, true]);
 
         // Generate target 5x3 Grid
@@ -216,6 +133,7 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
         const isWin = Math.random() < 0.42;
 
         if (isWin) {
+            // Guarantee winning line
             const winSym = SYMBOLS[Math.floor(Math.random() * 5)];
             for (let c = 0; c < 5; c++) {
                 const col = [
@@ -224,7 +142,7 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                     SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]
                 ];
                 if (c < 3 || Math.random() < 0.6) {
-                    col[1] = winSym;
+                    col[1] = winSym; // Middle line hit
                 }
                 newGrid.push(col);
             }
@@ -238,6 +156,7 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
             }
         }
 
+        // Staggered stop timers for each of the 5 reels
         [400, 750, 1100, 1450, 1800].forEach((delay, idx) => {
             setTimeout(() => {
                 setReelStates(prev => {
@@ -248,9 +167,11 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                 playSlotSound('reelStop');
 
                 if (idx === 4) {
+                    // All 5 reels stopped
                     setGrid(newGrid);
                     setSpinning(false);
 
+                    // Check Paylines
                     let winTotalEur = 0;
                     const hitLines: number[] = [];
 
@@ -296,7 +217,7 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
             margin: '0 auto',
             boxShadow: '0 20px 60px rgba(0,0,0,0.65)'
         }}>
-            {/* Header */}
+            {/* Top Bar */}
             <header style={{
                 padding: '16px 24px',
                 display: 'flex',
@@ -318,9 +239,9 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '1.4rem' }}>🎰</span>
                         <h2 style={{ margin: 0, fontSize: '1.3rem', color: '#f59e0b', fontWeight: 900, fontFamily: 'var(--font-display)' }}>
-                            Royal 5-Reel Slot mit 3D-Ziehhobel (20 Paylines)
+                            Royal 5-Reel Video Slot (20 Paylines)
                         </h2>
-                        <span className="stake-badge stake-badge-original">3D HEBEL & 5 WALZEN</span>
+                        <span className="stake-badge stake-badge-original">5-WALZEN MULTI-LINE</span>
                     </div>
                 </div>
 
@@ -346,38 +267,20 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                 </div>
             </header>
 
-            {/* Main Stage with 3D Canvas Cabinet & 3D Pull Lever */}
+            {/* Main 5x3 Video Slot Machine Screen */}
             <div style={{
                 background: 'radial-gradient(circle at center, #1e293b 0%, #030712 100%)',
+                padding: '32px 24px',
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                minHeight: '480px',
-                borderBottom: '1px solid var(--border-subtle)',
-                overflow: 'hidden'
+                minHeight: '460px',
+                borderBottom: '1px solid var(--border-subtle)'
             }}>
-                {/* 3D WebGL Scene with Mechanical Lever on the Right */}
-                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1 }}>
-                    <Canvas camera={{ position: [0, 0, 6.2], fov: 45 }}>
-                        <ambientLight intensity={0.8} />
-                        <directionalLight position={[6, 12, 8]} intensity={2.8} castShadow />
-                        <pointLight position={[3.2, 0, 2]} intensity={2.5} color="#dc2626" />
-                        <SlotCabinetWithLever3D
-                            isSpinning={spinning}
-                            leverPulled={leverPulled}
-                            onLeverClick={handleSpin}
-                        />
-                        <Environment preset="night" />
-                        <ContactShadows position={[0, -2.1, 0]} opacity={0.65} scale={10} blur={2} />
-                    </Canvas>
-                </div>
-
-                {/* Vegas Golden Marquee Header */}
+                {/* Vegas Golden Cabinet Marquee */}
                 <div style={{
-                    position: 'relative',
-                    zIndex: 10,
                     background: 'linear-gradient(135deg, #78350f 0%, #b45309 50%, #f59e0b 100%)',
                     color: '#000',
                     fontWeight: 900,
@@ -387,29 +290,45 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                     fontSize: '1.1rem',
                     boxShadow: '0 0 30px rgba(245, 158, 11, 0.9)',
                     border: '2px solid #fff',
-                    marginBottom: '20px',
-                    textAlign: 'center',
-                    pointerEvents: 'none'
+                    marginBottom: '24px',
+                    textAlign: 'center'
                 }}>
-                    ★ STAKE 5-REEL CASINO SLOT ★
+                    ★ STAKE 5-REEL MEGA MULTI-LINE SLOT ★
                 </div>
 
-                {/* 5-Reel Grid Frame overlay in center */}
+                {/* 5-Reel Cabinet Frame Container */}
                 <div style={{
-                    position: 'relative',
-                    zIndex: 10,
                     background: '#020617',
-                    border: '5px solid #334155',
+                    border: '6px solid #334155',
                     borderRadius: '16px',
-                    padding: '14px',
+                    padding: '16px',
                     boxShadow: '0 0 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(0,0,0,0.9)',
                     width: '100%',
-                    maxWidth: '820px'
+                    maxWidth: '940px',
+                    position: 'relative'
                 }}>
+                    {/* Paylines indicator side numbers */}
+                    <div style={{
+                        position: 'absolute',
+                        left: '-28px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px'
+                    }}>
+                        {[1, 2, 3, 4, 5].map(n => (
+                            <span key={n} style={{ background: '#f59e0b', color: '#000', fontWeight: 900, fontSize: '0.72rem', padding: '2px 6px', borderRadius: '4px' }}>
+                                {n}
+                            </span>
+                        ))}
+                    </div>
+
+                    {/* 5-Reel Grid */}
                     <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(5, 1fr)',
-                        gap: '10px'
+                        gap: '12px'
                     }}>
                         {grid.map((columnSymbols, colIdx) => {
                             const isReelSpinning = reelStates[colIdx];
@@ -423,26 +342,28 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                                         overflow: 'hidden',
                                         display: 'flex',
                                         flexDirection: 'column',
-                                        gap: '8px',
-                                        padding: '8px 4px',
+                                        gap: '10px',
+                                        padding: '10px 4px',
                                         boxShadow: 'inset 0 0 20px rgba(0,0,0,0.8)'
                                     }}
                                 >
                                     {columnSymbols.map((symbol, rowIdx) => {
+                                        // Check if this cell is part of a winning payline
                                         const isCellWinning = winningLines.some(lineIdx => PAYLINES[lineIdx][colIdx] === rowIdx);
+
                                         return (
                                             <div
                                                 key={rowIdx}
                                                 style={{
-                                                    height: '86px',
+                                                    height: '95px',
                                                     borderRadius: '8px',
-                                                    background: isCellWinning ? 'rgba(245, 158, 11, 0.28)' : 'rgba(255,255,255,0.03)',
+                                                    background: isCellWinning ? 'rgba(245, 158, 11, 0.25)' : 'rgba(255,255,255,0.03)',
                                                     border: isCellWinning ? '2px solid #f59e0b' : '1px solid rgba(255,255,255,0.06)',
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    fontSize: '3.4rem',
-                                                    boxShadow: isCellWinning ? '0 0 25px rgba(245, 158, 11, 0.9)' : 'none',
+                                                    fontSize: '3.6rem',
+                                                    boxShadow: isCellWinning ? '0 0 25px rgba(245, 158, 11, 0.8)' : 'none',
                                                     animation: isReelSpinning ? 'pulse 0.1s infinite alternate' : (isCellWinning ? 'pulseGlow 1s infinite' : 'none'),
                                                     filter: isReelSpinning ? 'blur(4px)' : 'none',
                                                     transition: 'all 0.15s'
@@ -458,46 +379,21 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                     </div>
                 </div>
 
-                {/* Lever Prompt Banner on Right */}
-                <div 
-                    onClick={handleSpin}
-                    style={{
-                        position: 'absolute',
-                        right: '18px',
-                        top: '48%',
-                        zIndex: 10,
-                        background: 'rgba(220, 38, 38, 0.85)',
-                        color: '#fff',
-                        padding: '8px 14px',
-                        borderRadius: '20px',
-                        fontSize: '0.8rem',
-                        fontWeight: 900,
-                        letterSpacing: '1px',
-                        cursor: 'pointer',
-                        boxShadow: '0 0 20px rgba(220, 38, 38, 0.8)',
-                        border: '2px solid #fff'
-                    }}
-                >
-                    [ 🕹️ HEBEL ZIEHEN ]
-                </div>
-
-                {/* Win Banner */}
+                {/* Win Notification Banner */}
                 {lastWin > 0 && !spinning && (
                     <div style={{
-                        position: 'relative',
-                        zIndex: 10,
-                        marginTop: '18px',
+                        marginTop: '24px',
                         background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
                         color: '#fff',
                         fontWeight: 900,
-                        padding: '10px 40px',
+                        padding: '12px 42px',
                         borderRadius: '30px',
                         boxShadow: '0 0 35px rgba(16, 185, 129, 0.9)',
-                        fontSize: '1.35rem',
+                        fontSize: '1.4rem',
                         letterSpacing: '1px',
                         animation: 'pulseGlow 1.2s infinite ease-in-out'
                     }}>
-                        🎉 20 LINIEN GEWINN: +{(lastWin / 100).toFixed(2)} €!
+                        🎉 20 PAYLINES GEWINN: +{(lastWin / 100).toFixed(2)} €!
                     </div>
                 )}
             </div>
@@ -554,7 +450,7 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                             letterSpacing: '0.5px'
                         }}
                     >
-                        {spinning ? 'HEBEL GEZOGEN...' : `HEBEL ZIEHEN / DREHEN (${betEur.toFixed(2)} €)`}
+                        {spinning ? '5 Walzen drehen...' : `5 WALZEN DREHEN (${betEur.toFixed(2)} €)`}
                     </button>
                 </div>
             </footer>
