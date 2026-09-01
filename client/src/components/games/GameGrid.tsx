@@ -24,8 +24,20 @@ const CASINO_GAMES: GameItem[] = [
         imageBg: 'linear-gradient(135deg, #451a03 0%, #78350f 50%, #b45309 100%)',
         icon: '🎰',
         players: '3.492',
-        badge: '3D LIVE',
+        badge: '3D REAL',
         badgeColor: 'var(--stake-gold)'
+    },
+    {
+        id: 'roulette3d',
+        title: 'European 3D Roulette',
+        category: 'originals',
+        provider: 'Stake Originals',
+        view: 'ROULETTE3D',
+        imageBg: 'linear-gradient(135deg, #022c22 0%, #064e3b 50%, #047857 100%)',
+        icon: '🎡',
+        players: '4.820',
+        badge: '3D LIVE',
+        badgeColor: 'var(--stake-green)'
     },
     {
         id: 'mines',
@@ -33,7 +45,7 @@ const CASINO_GAMES: GameItem[] = [
         category: 'originals',
         provider: 'Stake Originals',
         view: 'MINES',
-        imageBg: 'linear-gradient(135deg, #022c22 0%, #064e3b 50%, #047857 100%)',
+        imageBg: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%)',
         icon: '💣',
         players: '5.120',
         badge: 'ORIGINAL',
@@ -53,7 +65,7 @@ const CASINO_GAMES: GameItem[] = [
     },
     {
         id: 'lobby3d',
-        title: '3D Casino Lounge',
+        title: '3D Casino Walkthrough',
         category: 'originals',
         provider: 'Stake Originals',
         view: 'WALKTHROUGH3D',
@@ -96,18 +108,6 @@ const CASINO_GAMES: GameItem[] = [
         players: '4.329',
         badge: 'VS',
         badgeColor: '#ef4444'
-    },
-    {
-        id: 'roulette',
-        title: 'Lightning Roulette Live',
-        category: 'live',
-        provider: 'Evolution Gaming',
-        view: 'WALKTHROUGH3D',
-        imageBg: 'linear-gradient(135deg, #713f12 0%, #a16207 50%, #ca8a04 100%)',
-        icon: '🎡',
-        players: '5.928',
-        badge: '500x MULTI',
-        badgeColor: 'var(--stake-gold)'
     },
     {
         id: 'blackjack',
@@ -216,7 +216,7 @@ export const GameGrid: React.FC<GameGridProps> = ({ onSelectGame, searchQuery })
                             cursor: 'pointer'
                         }}
                     >
-                        Live Casino
+                        Live Casino & Roulette
                     </button>
                 </div>
 

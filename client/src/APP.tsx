@@ -6,6 +6,7 @@ import { BottomAdBanner } from './components/ads/BottomAdBanner';
 import { LiveBetsTable } from './components/ticker/LiveBetsTable';
 import { GameGrid } from './components/games/GameGrid';
 import { SlotMachine3D } from './components/SlotMachine3D';
+import { Roulette3D } from './components/games/Roulette3D';
 import { MinesGame } from './components/games/MinesGame';
 import { CrashGame } from './components/games/CrashGame';
 import { CasinoLobby3D } from './components/CasinoLobby3D';
@@ -14,7 +15,7 @@ import { AuthScreen } from './components/AuthScreen';
 
 export const App: React.FC = () => {
     // App State
-    const [balanceCents, setBalanceCents] = useState<number>(10000); // Default 100.00 € Startguthaben
+    const [balanceCents, setBalanceCents] = useState<number>(10000); // 100.00 € Startguthaben
     const [currency, setCurrency] = useState<CurrencyType>('EUR');
     const [activeView, setActiveView] = useState<GameView>('LOBBY');
     const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
@@ -28,7 +29,7 @@ export const App: React.FC = () => {
     const [showWallet, setShowWallet] = useState<boolean>(false);
     const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 
-    // Try to load initial user data from server if available
+    // Fetch user data if server available
     useEffect(() => {
         const checkUser = async () => {
             try {
@@ -42,9 +43,7 @@ export const App: React.FC = () => {
                     setUserEmail(data.email);
                     setIsLoggedIn(true);
                 }
-            } catch (e) {
-                // Server offline -> Keep local VIP guest demo session active
-            }
+            } catch (e) {}
         };
         checkUser();
     }, []);
@@ -67,11 +66,13 @@ export const App: React.FC = () => {
     const handlePromoAction = (promoId?: string) => {
         if (promoId === 'bonus') {
             setShowWallet(true);
+        } else if (promoId === 'drake') {
+            setActiveView('ROULETTE3D');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         } else if (promoId === 'f1' || promoId === 'ufc') {
             setActiveHeaderTab('sports');
             window.scrollTo({ top: 300, behavior: 'smooth' });
         } else {
-            // Default to 3D Slot or Mines for giveaway action
             setActiveView('SLOT3D');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -137,7 +138,7 @@ export const App: React.FC = () => {
                         </>
                     )}
 
-                    {/* View 2: Royal 3D Slot Machine */}
+                    {/* View 2: Royal 3D Slot Machine (Authentic physical 3D design) */}
                     {activeView === 'SLOT3D' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                             <SlotMachine3D
@@ -146,7 +147,6 @@ export const App: React.FC = () => {
                                 onUpdateBalance={setBalanceCents}
                                 onOpenWallet={() => setShowWallet(true)}
                             />
-                            {/* Sponsor Bar also visible below games */}
                             <BottomAdBanner
                                 onOpenDeposit={() => setShowWallet(true)}
                                 onSelectPromo={handlePromoAction}
@@ -154,7 +154,22 @@ export const App: React.FC = () => {
                         </div>
                     )}
 
-                    {/* View 3: Stake Mines Game */}
+                    {/* View 3: European 3D Live Roulette */}
+                    {activeView === 'ROULETTE3D' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                            <Roulette3D
+                                initialBalance={balanceCents}
+                                onBackToLobby={() => setActiveView('LOBBY')}
+                                onUpdateBalance={setBalanceCents}
+                            />
+                            <BottomAdBanner
+                                onOpenDeposit={() => setShowWallet(true)}
+                                onSelectPromo={handlePromoAction}
+                            />
+                        </div>
+                    )}
+
+                    {/* View 4: Stake Mines Game */}
                     {activeView === 'MINES' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                             <MinesGame
@@ -169,7 +184,7 @@ export const App: React.FC = () => {
                         </div>
                     )}
 
-                    {/* View 4: Stake Crash Game */}
+                    {/* View 5: Stake Crash Game */}
                     {activeView === 'CRASH' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                             <CrashGame
@@ -184,7 +199,7 @@ export const App: React.FC = () => {
                         </div>
                     )}
 
-                    {/* View 5: 3D Casino Room Walkthrough */}
+                    {/* View 6: 3D Casino Room Walkthrough */}
                     {activeView === 'WALKTHROUGH3D' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -194,10 +209,17 @@ export const App: React.FC = () => {
                                 >
                                     ← Zurück zur Lobby
                                 </button>
-                                <span className="stake-badge stake-badge-vip">3D VIRTUAL REALITY LOUNGE</span>
+                                <span className="stake-badge stake-badge-vip">3D VIRTUAL CASINO LOUNGE</span>
                             </div>
                             <div style={{ height: '70vh', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
-                                <CasinoLobby3D initialBalance={balanceCents} />
+                                <CasinoLobby3D
+                                    initialBalance={balanceCents}
+                                    onSelectGame={(gameId) => {
+                                        if (gameId === 'SLOT3D') setActiveView('SLOT3D');
+                                        else if (gameId === 'ROULETTE3D') setActiveView('ROULETTE3D');
+                                        else if (gameId === 'MINES') setActiveView('MINES');
+                                    }}
+                                />
                             </div>
                         </div>
                     )}

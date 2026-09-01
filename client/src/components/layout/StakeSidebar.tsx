@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type GameView = 'LOBBY' | 'SLOT3D' | 'MINES' | 'CRASH' | 'WALKTHROUGH3D' | 'PROMOTIONS';
+export type GameView = 'LOBBY' | 'SLOT3D' | 'ROULETTE3D' | 'MINES' | 'CRASH' | 'WALKTHROUGH3D' | 'PROMOTIONS';
 
 interface StakeSidebarProps {
     isOpen: boolean;
@@ -93,7 +93,36 @@ export const StakeSidebar: React.FC<StakeSidebarProps> = ({
                             {isOpen && (
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                                     <span>Royal 3D Slot</span>
-                                    <span className="stake-badge stake-badge-original">HOT</span>
+                                    <span className="stake-badge stake-badge-original">ORIGINAL</span>
+                                </div>
+                            )}
+                        </button>
+
+                        {/* European 3D Live Roulette */}
+                        <button
+                            onClick={() => onSelectView('ROULETTE3D')}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '14px',
+                                width: '100%',
+                                padding: '10px 14px',
+                                borderRadius: 'var(--radius-md)',
+                                border: 'none',
+                                background: activeView === 'ROULETTE3D' ? 'var(--bg-elevated)' : 'transparent',
+                                color: activeView === 'ROULETTE3D' ? 'var(--stake-green)' : 'var(--text-white)',
+                                fontWeight: activeView === 'ROULETTE3D' ? 700 : 500,
+                                fontSize: '0.9rem',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.15s'
+                            }}
+                        >
+                            <span style={{ fontSize: '1.2rem', minWidth: '24px', textAlign: 'center' }}>🎡</span>
+                            {isOpen && (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                    <span>3D Roulette</span>
+                                    <span className="stake-badge stake-badge-vip">3D LIVE</span>
                                 </div>
                             )}
                         </button>
@@ -179,7 +208,7 @@ export const StakeSidebar: React.FC<StakeSidebarProps> = ({
                             <span style={{ fontSize: '1.2rem', minWidth: '24px', textAlign: 'center' }}>🕶️</span>
                             {isOpen && (
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                                    <span>3D Casino Lounge</span>
+                                    <span>3D Casino Walkthrough</span>
                                     <span className="stake-badge stake-badge-vip">3D</span>
                                 </div>
                             )}
