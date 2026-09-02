@@ -14,6 +14,12 @@ import { WalletModal } from './components/WalletModal';
 import { AuthScreen } from './components/AuthScreen';
 import { AdminRtpModal } from './components/AdminRtpModal';
 import { AdminDashboardView } from './components/AdminDashboardView';
+import SportsBetting from './components/SportsBetting';
+import { BlackjackGame } from './components/games/BlackjackGame';
+import { PlinkoGame } from './components/games/PlinkoGame';
+import { GatesOfOlympusGame } from './components/games/GatesOfOlympusGame';
+import { SweetBonanzaGame } from './components/games/SweetBonanzaGame';
+import { LiveChat } from './components/chat/LiveChat';
 
 export const App: React.FC = () => {
     // App State
@@ -26,6 +32,7 @@ export const App: React.FC = () => {
     const [kycStatus, setKycStatus] = useState<string>('VERIFIED');
     const [userEmail, setUserEmail] = useState<string>('');
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+    const [chatOpen, setChatOpen] = useState<boolean>(true); // Side Live Chat default open
 
     // Modals
     const [showWallet, setShowWallet] = useState<boolean>(false);
@@ -115,6 +122,8 @@ export const App: React.FC = () => {
                 onTabChange={setActiveHeaderTab}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
+                chatOpen={chatOpen}
+                onToggleChat={() => setChatOpen(!chatOpen)}
             />
 
             <div className="stake-body-container">
@@ -250,7 +259,79 @@ export const App: React.FC = () => {
                             onBackToLobby={() => setActiveView('LOBBY')}
                         />
                     )}
+
+                    {/* View 8: P2P Sports Betting */}
+                    {activeView === 'SPORTS' && (
+                        <SportsBetting />
+                    )}
+
+                    {/* View 9: Blackjack */}
+                    {activeView === 'BLACKJACK' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                            <BlackjackGame
+                                balanceCents={balanceCents}
+                                onUpdateBalance={setBalanceCents}
+                                onBack={() => setActiveView('LOBBY')}
+                            />
+                            <BottomAdBanner
+                                onOpenDeposit={() => setShowWallet(true)}
+                                onSelectPromo={handlePromoAction}
+                            />
+                        </div>
+                    )}
+
+                    {/* View 10: Plinko */}
+                    {activeView === 'PLINKO' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                            <PlinkoGame
+                                balanceCents={balanceCents}
+                                onUpdateBalance={setBalanceCents}
+                                onBack={() => setActiveView('LOBBY')}
+                            />
+                            <BottomAdBanner
+                                onOpenDeposit={() => setShowWallet(true)}
+                                onSelectPromo={handlePromoAction}
+                            />
+                        </div>
+                    )}
+
+                    {/* View 11: Gates of Olympus 1000 */}
+                    {activeView === 'GATES' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                            <GatesOfOlympusGame
+                                balanceCents={balanceCents}
+                                onUpdateBalance={setBalanceCents}
+                                onBack={() => setActiveView('LOBBY')}
+                            />
+                            <BottomAdBanner
+                                onOpenDeposit={() => setShowWallet(true)}
+                                onSelectPromo={handlePromoAction}
+                            />
+                        </div>
+                    )}
+
+                    {/* View 12: Sweet Bonanza */}
+                    {activeView === 'SWEET_BONANZA' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                            <SweetBonanzaGame
+                                balanceCents={balanceCents}
+                                onUpdateBalance={setBalanceCents}
+                                onBack={() => setActiveView('LOBBY')}
+                            />
+                            <BottomAdBanner
+                                onOpenDeposit={() => setShowWallet(true)}
+                                onSelectPromo={handlePromoAction}
+                            />
+                        </div>
+                    )}
                 </main>
+
+                {/* Side Live Chat with Bot Interaction */}
+                <LiveChat
+                    isOpen={chatOpen}
+                    onClose={() => setChatOpen(false)}
+                    userEmail={userEmail}
+                />
             </div>
 
             {/* Cashier / Wallet Modal */}

@@ -7,6 +7,7 @@ export interface RtpSettings {
     minesRiggedLoss: boolean;
     crashFixedMultiplier: number | null; // e.g. 100.0 or null for dynamic
     crashInstantBust: boolean;
+    targetRtpPercent?: number;
 }
 
 const DEFAULT_RTP_SETTINGS: RtpSettings = {
@@ -18,6 +19,7 @@ const DEFAULT_RTP_SETTINGS: RtpSettings = {
     minesRiggedLoss: false,
     crashFixedMultiplier: null,
     crashInstantBust: false,
+    targetRtpPercent: 97.3,
 };
 
 const STORAGE_KEY = 'stake_royal_rtp_settings';
@@ -26,7 +28,7 @@ export const getRtpSettings = (): RtpSettings => {
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
-            return JSON.parse(stored);
+            return { ...DEFAULT_RTP_SETTINGS, ...JSON.parse(stored) };
         }
     } catch (e) {
         console.error('Failed to load RTP settings:', e);
@@ -41,6 +43,15 @@ export const saveRtpSettings = (settings: RtpSettings): void => {
     } catch (e) {
         console.error('Failed to save RTP settings:', e);
     }
+};
+
+export const setRtpSettings = (partial: Partial<RtpSettings>): void => {
+    const current = getRtpSettings();
+    saveRtpSettings({ ...current, ...partial });
+};
+
+export const drawWinningNumber = (): number => {
+    return Math.floor(Math.random() * 37);
 };
 
 export const applyRtpPreset = (preset: RtpSettings['globalPreset']): RtpSettings => {

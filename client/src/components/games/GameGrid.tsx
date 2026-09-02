@@ -76,11 +76,23 @@ const CASINO_GAMES: GameItem[] = [
         badgeColor: '#c084fc'
     },
     {
+        id: 'plinko',
+        title: 'Stake Plinko',
+        category: 'originals',
+        provider: 'Stake Originals',
+        view: 'PLINKO',
+        imageBg: 'linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #dc2626 100%)',
+        icon: '🔴',
+        players: '6.210',
+        badge: '1000x',
+        badgeColor: 'var(--stake-gold)'
+    },
+    {
         id: 'gates',
         title: 'Gates of Olympus 1000',
         category: 'slots',
         provider: 'Pragmatic Play',
-        view: 'SLOT3D',
+        view: 'GATES',
         imageBg: 'linear-gradient(135deg, #4a044e 0%, #701a75 50%, #a21caf 100%)',
         icon: '⚡',
         players: '8.431',
@@ -92,10 +104,12 @@ const CASINO_GAMES: GameItem[] = [
         title: 'Sweet Bonanza',
         category: 'slots',
         provider: 'Pragmatic Play',
-        view: 'SLOT3D',
+        view: 'SWEET_BONANZA',
         imageBg: 'linear-gradient(135deg, #831843 0%, #be185d 50%, #db2777 100%)',
         icon: '🍭',
-        players: '6.712'
+        players: '6.712',
+        badge: '100x',
+        badgeColor: '#ec4899'
     },
     {
         id: 'wanted',
@@ -111,14 +125,14 @@ const CASINO_GAMES: GameItem[] = [
     },
     {
         id: 'blackjack',
-        title: 'Stake Exclusive VIP Blackjack',
-        category: 'live',
-        provider: 'Evolution Gaming',
-        view: 'WALKTHROUGH3D',
+        title: 'Stake Blackjack',
+        category: 'originals',
+        provider: 'Stake Originals',
+        view: 'BLACKJACK',
         imageBg: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
         icon: '🃏',
         players: '2.180',
-        badge: 'VIP',
+        badge: 'NEW',
         badgeColor: 'var(--stake-green)'
     }
 ];

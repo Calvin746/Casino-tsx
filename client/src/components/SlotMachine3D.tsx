@@ -314,7 +314,7 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            maxWidth: '1160px',
+            maxWidth: '1520px',
             margin: '0 auto',
             boxShadow: '0 20px 60px rgba(0,0,0,0.65)',
             position: 'relative'
@@ -409,13 +409,13 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
             {/* Main 5x3 Video Slot Machine Screen */}
             <div style={{
                 background: 'radial-gradient(circle at center, #1e293b 0%, #030712 100%)',
-                padding: '32px 24px',
+                padding: '36px 24px',
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                minHeight: '460px',
+                minHeight: '540px',
                 borderBottom: '1px solid var(--border-subtle)'
             }}>
                 {/* Vegas Golden Cabinet Marquee */}
@@ -423,10 +423,10 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                     background: 'linear-gradient(135deg, #78350f 0%, #b45309 50%, #f59e0b 100%)',
                     color: '#000',
                     fontWeight: 900,
-                    padding: '6px 40px',
+                    padding: '8px 48px',
                     borderRadius: '8px',
                     letterSpacing: '3px',
-                    fontSize: '1.1rem',
+                    fontSize: '1.2rem',
                     boxShadow: '0 0 30px rgba(245, 158, 11, 0.9)',
                     border: '2px solid #fff',
                     marginBottom: '24px',
@@ -440,10 +440,10 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                     background: '#020617',
                     border: '6px solid #334155',
                     borderRadius: '16px',
-                    padding: '16px',
+                    padding: '18px',
                     boxShadow: '0 0 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(0,0,0,0.9)',
                     width: '100%',
-                    maxWidth: '940px',
+                    maxWidth: '1220px',
                     position: 'relative'
                 }}>
                     {/* Paylines indicator side numbers */}
@@ -494,14 +494,14 @@ export const SlotMachine3D: React.FC<VideoSlot5x3Props> = ({
                                             <div
                                                 key={rowIdx}
                                                 style={{
-                                                    height: '95px',
+                                                    height: '115px',
                                                     borderRadius: '8px',
                                                     background: isCellWinning ? 'rgba(245, 158, 11, 0.25)' : 'rgba(255,255,255,0.03)',
                                                     border: isCellWinning ? '2px solid #f59e0b' : '1px solid rgba(255,255,255,0.06)',
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    fontSize: '3.6rem',
+                                                    fontSize: '4.2rem',
                                                     boxShadow: isCellWinning ? '0 0 25px rgba(245, 158, 11, 0.8)' : 'none',
                                                     animation: isReelSpinning ? 'pulse 0.1s infinite alternate' : (isCellWinning ? 'pulseGlow 1s infinite' : 'none'),
                                                     filter: isReelSpinning ? 'blur(4px)' : 'none',

@@ -10,6 +10,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onClose, isModa
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [ageVerified, setAgeVerified] = useState(false);
+    const [agbAccepted, setAgbAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -17,6 +19,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onClose, isModa
         e.preventDefault();
         setLoading(true);
         setError(null);
+
+        if (!isLogin && (!ageVerified || !agbAccepted)) {
+            setError('Bitte bestätige dein Alter (18+) und die AGB, um fortzufahren.');
+            setLoading(false);
+            return;
+        }
 
         const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
 
@@ -220,6 +228,37 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin, onClose, isModa
                         onBlur={(e) => { e.target.style.border = '1px solid rgba(255,255,255,0.1)'; e.target.style.background = 'rgba(0,0,0,0.4)'; }}
                     />
                 </div>
+
+                {!isLogin && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer', fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', lineHeight: '1.4' }}>
+                            <input 
+                                type="checkbox" 
+                                checked={ageVerified} 
+                                onChange={(e) => setAgeVerified(e.target.checked)} 
+                                style={{ marginTop: '2px', accentColor: 'var(--stake-green)', width: '16px', height: '16px', cursor: 'pointer' }}
+                            />
+                            <span>Ich bestätige hiermit, dass ich mindestens <strong style={{ color: '#fff' }}>18 Jahre alt</strong> bin.</span>
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer', fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', lineHeight: '1.4' }}>
+                            <input 
+                                type="checkbox" 
+                                checked={agbAccepted} 
+                                onChange={(e) => setAgbAccepted(e.target.checked)} 
+                                style={{ marginTop: '2px', accentColor: 'var(--stake-green)', width: '16px', height: '16px', cursor: 'pointer' }}
+                            />
+                            <span>Ich habe die <span 
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    alert("Allgemeine Geschäftsbedingungen (AGB)\n\n1. Sie müssen mindestens 18 Jahre alt sein.\n2. Spielen kann süchtig machen.\n3. Dies ist ein Demo-Casino. Echtes Geld wird nicht ausgezahlt.\n\nDurch das Setzen des Hakens akzeptieren Sie diese Bedingungen.");
+                                }}
+                                style={{ color: 'var(--stake-green)', textDecoration: 'underline', fontWeight: 600, cursor: 'pointer' }}
+                                title="Klicken, um die AGB zu lesen"
+                            >Allgemeinen Geschäftsbedingungen (AGB)</span> gelesen und akzeptiere diese vollumfänglich.</span>
+                        </label>
+                    </div>
+                )}
 
                 <button
                     type="submit"

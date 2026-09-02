@@ -102,7 +102,7 @@ export const CrashGame: React.FC<CrashGameProps> = ({ balanceCents, onUpdateBala
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--border-subtle)',
             padding: '28px',
-            maxWidth: '960px',
+            maxWidth: '1360px',
             margin: '0 auto'
         }}>
             {/* Header */}
@@ -151,8 +151,8 @@ export const CrashGame: React.FC<CrashGameProps> = ({ balanceCents, onUpdateBala
             {/* Main Stage: Controls Left, Flight Canvas Right */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(260px, 300px) 1fr',
-                gap: '24px',
+                gridTemplateColumns: 'minmax(280px, 340px) 1fr',
+                gap: '28px',
                 alignItems: 'center'
             }}>
                 {/* Controls */}
@@ -244,7 +244,7 @@ export const CrashGame: React.FC<CrashGameProps> = ({ balanceCents, onUpdateBala
                     background: 'var(--bg-main)',
                     borderRadius: 'var(--radius-lg)',
                     border: '1px solid var(--border-subtle)',
-                    height: '320px',
+                    height: '440px',
                     position: 'relative',
                     overflow: 'hidden',
                     display: 'flex',

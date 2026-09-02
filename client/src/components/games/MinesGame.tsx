@@ -119,7 +119,7 @@ export const MinesGame: React.FC<MinesGameProps> = ({ balanceCents, onUpdateBala
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--border-subtle)',
             padding: '28px',
-            maxWidth: '920px',
+            maxWidth: '1360px',
             margin: '0 auto'
         }}>
             {/* Top Bar */}
@@ -294,9 +294,9 @@ export const MinesGame: React.FC<MinesGameProps> = ({ balanceCents, onUpdateBala
                 <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(5, 1fr)',
-                    gap: '10px',
+                    gap: '14px',
                     aspectRatio: '1 / 1',
-                    maxHeight: '460px',
+                    maxHeight: '560px',
                     margin: '0 auto',
                     width: '100%'
                 }}>
@@ -327,7 +327,7 @@ export const MinesGame: React.FC<MinesGameProps> = ({ balanceCents, onUpdateBala
                                     border,
                                     borderRadius: 'var(--radius-md)',
                                     aspectRatio: '1 / 1',
-                                    fontSize: '2rem',
+                                    fontSize: '2.5rem',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',

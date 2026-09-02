@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import mysql, { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
@@ -6,10 +9,11 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
+import nodemailer from 'nodemailer';
 
 const app = express();
 app.use(cors({
-    origin: 'http://localhost:5173', // Frontend URL
+    origin: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:3000'],
     credentials: true
 }));
 app.use(express.json());
@@ -17,6 +21,24 @@ app.use(cookieParser());
 
 // JWT Secret (in production from .env)
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-casino-key';
+
+// Email Transporter Config (Ethereal Test Account)
+let transporter: nodemailer.Transporter;
+
+nodemailer.createTestAccount().then(account => {
+    transporter = nodemailer.createTransport({
+        host: account.smtp.host,
+        port: account.smtp.port,
+        secure: account.smtp.secure,
+        auth: {
+            user: account.user,
+            pass: account.pass
+        }
+    });
+    console.log('Test-Email Account (Ethereal) erstellt. Mails werden hier nicht wirklich versendet, sondern können über einen Link im Terminal angesehen werden.');
+}).catch(err => {
+    console.error('Fehler beim Erstellen des Test-Email-Accounts:', err);
+});
 
 // Rate Limiting
 const authLimiter = rateLimit({
@@ -86,6 +108,24 @@ app.post('/api/auth/register', authLimiter, async (req: Request, res: Response) 
             'INSERT INTO users (id, email, password_hash, balance_cents, is_suspended) VALUES (?, ?, ?, ?, ?)',
             [userId, email, passwordHash, 10000, false] // 100 Euro Startguthaben for demo
         );
+
+        // Send Welcome Email
+        if (transporter) {
+            try {
+                const info = await transporter.sendMail({
+                    from: '"Casino Admin" <admin@casino.local>',
+                    to: email,
+                    subject: 'Willkommen im Online Casino!',
+                    text: 'Hallo,\n\nvielen Dank für deine Registrierung in unserem Casino! Wir haben dir 100€ Startguthaben gutgeschrieben.\n\nViel Spaß und Erfolg,\nDein Casino Team',
+                    html: '<p>Hallo,</p><p>vielen Dank für deine Registrierung in unserem Casino! Wir haben dir <strong>100€ Startguthaben</strong> gutgeschrieben.</p><p>Viel Spaß und Erfolg,<br>Dein Casino Team</p>'
+                });
+                console.log(`Willkommens-Email gesendet an ${email}`);
+                console.log(`---> Vorschau-Link für die E-Mail (im Browser öffnen): ${nodemailer.getTestMessageUrl(info)}`);
+            } catch (emailErr) {
+                console.error('Failed to send welcome email:', emailErr);
+                // Don't fail the registration if email fails
+            }
+        }
 
         res.status(201).json({ message: 'Registrierung erfolgreich.', userId });
     } catch (err) {
@@ -347,6 +387,181 @@ app.post('/api/wallet/withdraw', authenticateJWT, async (req: Request, res: Resp
         connection.release();
     }
 });
+
+// --- SPORTS BETTING (P2P) ---
+
+app.get('/api/sports/matches', async (req: Request, res: Response) => {
+    try {
+        const [matches] = await pool.query('SELECT * FROM matches WHERE status IN ("UPCOMING", "LIVE") ORDER BY start_time ASC');
+        res.json(matches);
+    } catch(err) {
+        console.error('Error fetching matches:', err);
+        res.status(500).json({ error: 'Fehler beim Laden der Spiele.' });
+    }
+});
+
+// Mock endpoint to seed some matches (for demo purposes)
+app.post('/api/sports/seed-matches', async (req: Request, res: Response) => {
+    try {
+        const matchId1 = crypto.randomUUID();
+        const matchId2 = crypto.randomUUID();
+        await pool.query(
+            `INSERT IGNORE INTO matches (id, api_id, sport_key, home_team, away_team, start_time, status) VALUES 
+            (?, 'mock_api_1', 'soccer_germany_bundesliga', 'Bayern München', 'Borussia Dortmund', DATE_ADD(NOW(), INTERVAL 1 DAY), 'UPCOMING'),
+            (?, 'mock_api_2', 'soccer_germany_bundesliga', 'RB Leipzig', 'Bayer Leverkusen', DATE_ADD(NOW(), INTERVAL 2 DAY), 'UPCOMING')`,
+            [matchId1, matchId2]
+        );
+        res.json({ message: 'Mock Matches created.' });
+    } catch(err) {
+        console.error(err);
+        res.status(500).json({ error: 'Seed failed.' });
+    }
+});
+
+app.post('/api/sports/bets/create', authenticateJWT, async (req: Request, res: Response) => {
+    const userId = (req as any).user.userId;
+    const { matchId, teamChoice, stakeCents } = req.body;
+
+    if (!matchId || !teamChoice || !stakeCents || stakeCents <= 0) {
+        return res.status(400).json({ error: 'Ungültige Wett-Parameter.' });
+    }
+    if (!['HOME', 'AWAY', 'DRAW'].includes(teamChoice)) {
+        return res.status(400).json({ error: 'Ungültige Teamauswahl.' });
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // 1. Check user balance
+        const [userRows] = await connection.query<UserRow[]>('SELECT balance_cents FROM users WHERE id = ? FOR UPDATE', [userId]);
+        if (userRows.length === 0) throw new Error('User not found');
+        if (userRows[0].balance_cents < stakeCents) {
+            await connection.rollback();
+            return res.status(400).json({ error: 'Unzureichendes Guthaben für diese Wette.' });
+        }
+
+        // 2. Check if match exists and is upcoming
+        const [matchRows] = await connection.query<any[]>('SELECT status FROM matches WHERE id = ?', [matchId]);
+        if (matchRows.length === 0 || matchRows[0].status !== 'UPCOMING') {
+            await connection.rollback();
+            return res.status(400).json({ error: 'Spiel nicht gefunden oder nicht mehr verfügbar für Wetten.' });
+        }
+
+        // 3. Deduct balance
+        const newBalance = userRows[0].balance_cents - stakeCents;
+        await connection.query('UPDATE users SET balance_cents = ? WHERE id = ?', [newBalance, userId]);
+
+        // 4. Create P2P Bet Offer
+        const betId = crypto.randomUUID();
+        await connection.query(
+            `INSERT INTO p2p_bets (id, match_id, creator_user_id, creator_team_choice, stake_cents, status) 
+             VALUES (?, ?, ?, ?, ?, 'OPEN')`,
+            [betId, matchId, userId, teamChoice, stakeCents]
+        );
+
+        // 5. Create Transaction Record
+        const txId = crypto.randomUUID();
+        await connection.query(
+            `INSERT INTO balance_transactions (id, user_id, type, amount_cents, balance_after_cents, reference_id)
+             VALUES (?, ?, 'BET_PLACE', ?, ?, ?)`,
+            [txId, userId, -stakeCents, newBalance, betId]
+        );
+
+        await connection.commit();
+        res.status(201).json({ message: 'Wetteinsatz erfolgreich erstellt.', betId, newBalanceCents: newBalance });
+    } catch(err) {
+        await connection.rollback();
+        console.error('Create Bet Error:', err);
+        res.status(500).json({ error: 'Serverfehler beim Erstellen der Wette.' });
+    } finally {
+        connection.release();
+    }
+});
+
+app.get('/api/sports/bets/open/:matchId', async (req: Request, res: Response) => {
+    const { matchId } = req.params;
+    try {
+        // Only return open bets for this match
+        const [bets] = await pool.query(`
+            SELECT b.id, b.creator_team_choice, b.stake_cents, b.created_at, u.email as creator_email 
+            FROM p2p_bets b
+            JOIN users u ON b.creator_user_id = u.id
+            WHERE b.match_id = ? AND b.status = 'OPEN'
+        `, [matchId]);
+        res.json(bets);
+    } catch(err) {
+        res.status(500).json({ error: 'Fehler beim Laden der Wetten.' });
+    }
+});
+
+app.post('/api/sports/bets/accept', authenticateJWT, async (req: Request, res: Response) => {
+    const userId = (req as any).user.userId;
+    const { betId } = req.body;
+
+    if (!betId) return res.status(400).json({ error: 'Wett-ID fehlt.' });
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // 1. Lock the bet row
+        const [betRows] = await connection.query<any[]>('SELECT * FROM p2p_bets WHERE id = ? FOR UPDATE', [betId]);
+        if (betRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Wette nicht gefunden.' });
+        }
+        
+        const bet = betRows[0];
+        
+        if (bet.status !== 'OPEN') {
+            await connection.rollback();
+            return res.status(400).json({ error: 'Diese Wette wurde bereits angenommen oder ist nicht mehr verfügbar.' });
+        }
+        
+        if (bet.creator_user_id === userId) {
+            await connection.rollback();
+            return res.status(400).json({ error: 'Du kannst deine eigene Wette nicht annehmen.' });
+        }
+
+        // 2. Lock user balance
+        const [userRows] = await connection.query<UserRow[]>('SELECT balance_cents FROM users WHERE id = ? FOR UPDATE', [userId]);
+        if (userRows.length === 0) throw new Error('User not found');
+        
+        if (userRows[0].balance_cents < bet.stake_cents) {
+            await connection.rollback();
+            return res.status(400).json({ error: 'Unzureichendes Guthaben, um diese Wette anzunehmen.' });
+        }
+
+        // 3. Deduct balance from acceptor
+        const newBalance = userRows[0].balance_cents - bet.stake_cents;
+        await connection.query('UPDATE users SET balance_cents = ? WHERE id = ?', [newBalance, userId]);
+
+        // 4. Update Bet Status
+        await connection.query(
+            'UPDATE p2p_bets SET acceptor_user_id = ?, status = "MATCHED" WHERE id = ?',
+            [userId, betId]
+        );
+
+        // 5. Create Transaction Record
+        const txId = crypto.randomUUID();
+        await connection.query(
+            `INSERT INTO balance_transactions (id, user_id, type, amount_cents, balance_after_cents, reference_id)
+             VALUES (?, ?, 'BET_ACCEPT', ?, ?, ?)`,
+            [txId, userId, -bet.stake_cents, newBalance, betId]
+        );
+
+        await connection.commit();
+        res.json({ message: 'Wette erfolgreich angenommen! Das Spiel kann beginnen.', newBalanceCents: newBalance });
+    } catch(err) {
+        await connection.rollback();
+        console.error('Accept Bet Error:', err);
+        res.status(500).json({ error: 'Fehler beim Annehmen der Wette.' });
+    } finally {
+        connection.release();
+    }
+});
+
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

@@ -18,6 +18,8 @@ interface StakeHeaderProps {
     onTabChange: (tab: 'casino' | 'sports') => void;
     searchQuery: string;
     onSearchChange: (q: string) => void;
+    chatOpen?: boolean;
+    onToggleChat?: () => void;
 }
 
 export const StakeHeader: React.FC<StakeHeaderProps> = ({
@@ -35,7 +37,9 @@ export const StakeHeader: React.FC<StakeHeaderProps> = ({
     activeTab,
     onTabChange,
     searchQuery,
-    onSearchChange
+    onSearchChange,
+    chatOpen,
+    onToggleChat
 }) => {
     const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -422,6 +426,38 @@ export const StakeHeader: React.FC<StakeHeaderProps> = ({
                             Registrieren
                         </button>
                     </div>
+                )}
+
+                {/* Live Chat Toggle Button */}
+                {onToggleChat && (
+                    <button
+                        onClick={onToggleChat}
+                        title="Live Chat umschalten"
+                        className="stake-btn stake-btn-secondary"
+                        style={{
+                            padding: '8px 14px',
+                            fontSize: '0.85rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            border: chatOpen ? '1px solid var(--stake-green)' : '1px solid var(--border-subtle)',
+                            color: chatOpen ? 'var(--stake-green)' : 'var(--text-white)',
+                            background: chatOpen ? 'rgba(0, 231, 1, 0.08)' : 'var(--bg-elevated)'
+                        }}
+                    >
+                        <span style={{ fontSize: '1rem' }}>💬</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{
+                                width: '7px',
+                                height: '7px',
+                                borderRadius: '50%',
+                                background: 'var(--stake-green)',
+                                display: 'inline-block',
+                                boxShadow: '0 0 6px var(--stake-green)'
+                            }}></span>
+                            Chat
+                        </span>
+                    </button>
                 )}
             </div>
         </header>

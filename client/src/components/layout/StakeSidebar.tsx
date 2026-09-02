@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type GameView = 'LOBBY' | 'SLOT3D' | 'ROULETTE3D' | 'MINES' | 'CRASH' | 'WALKTHROUGH3D' | 'PROMOTIONS' | 'ADMIN_DASHBOARD';
+export type GameView = 'LOBBY' | 'SLOT3D' | 'ROULETTE3D' | 'BLACKJACK' | 'MINES' | 'CRASH' | 'PLINKO' | 'GATES' | 'SWEET_BONANZA' | 'WALKTHROUGH3D' | 'PROMOTIONS' | 'ADMIN_DASHBOARD' | 'SPORTS';
 
 interface StakeSidebarProps {
     isOpen: boolean;
@@ -97,6 +97,35 @@ export const StakeSidebar: React.FC<StakeSidebarProps> = ({
                             {isOpen && <span>Casino Lobby</span>}
                         </button>
 
+                        {/* Sports Betting */}
+                        <button
+                            onClick={() => onSelectView('SPORTS')}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '14px',
+                                width: '100%',
+                                padding: '10px 14px',
+                                borderRadius: 'var(--radius-md)',
+                                border: 'none',
+                                background: activeView === 'SPORTS' ? 'var(--bg-elevated)' : 'transparent',
+                                color: activeView === 'SPORTS' ? 'var(--stake-green)' : 'var(--text-white)',
+                                fontWeight: activeView === 'SPORTS' ? 700 : 500,
+                                fontSize: '0.9rem',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.15s'
+                            }}
+                        >
+                            <span style={{ fontSize: '1.2rem', minWidth: '24px', textAlign: 'center' }}>⚽</span>
+                            {isOpen && (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                    <span>P2P Sportwetten</span>
+                                    <span className="stake-badge stake-badge-vip">NEW</span>
+                                </div>
+                            )}
+                        </button>
+
                         {/* Royal 3D Slot */}
                         <button
                             onClick={() => onSelectView('SLOT3D')}
@@ -155,6 +184,35 @@ export const StakeSidebar: React.FC<StakeSidebarProps> = ({
                             )}
                         </button>
 
+                        {/* Blackjack */}
+                        <button
+                            onClick={() => onSelectView('BLACKJACK')}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '14px',
+                                width: '100%',
+                                padding: '10px 14px',
+                                borderRadius: 'var(--radius-md)',
+                                border: 'none',
+                                background: activeView === 'BLACKJACK' ? 'var(--bg-elevated)' : 'transparent',
+                                color: activeView === 'BLACKJACK' ? 'var(--stake-green)' : 'var(--text-white)',
+                                fontWeight: activeView === 'BLACKJACK' ? 700 : 500,
+                                fontSize: '0.9rem',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.15s'
+                            }}
+                        >
+                            <span style={{ fontSize: '1.2rem', minWidth: '24px', textAlign: 'center' }}>🃏</span>
+                            {isOpen && (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                    <span>Blackjack</span>
+                                    <span className="stake-badge stake-badge-original">NEW</span>
+                                </div>
+                            )}
+                        </button>
+
                         {/* Mines */}
                         <button
                             onClick={() => onSelectView('MINES')}
@@ -209,6 +267,93 @@ export const StakeSidebar: React.FC<StakeSidebarProps> = ({
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                                     <span>Stake Crash</span>
                                     <span className="stake-badge stake-badge-original">LIVE</span>
+                                </div>
+                            )}
+                        </button>
+
+                        {/* Plinko */}
+                        <button
+                            onClick={() => onSelectView('PLINKO')}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '14px',
+                                width: '100%',
+                                padding: '10px 14px',
+                                borderRadius: 'var(--radius-md)',
+                                border: 'none',
+                                background: activeView === 'PLINKO' ? 'var(--bg-elevated)' : 'transparent',
+                                color: activeView === 'PLINKO' ? 'var(--stake-green)' : 'var(--text-white)',
+                                fontWeight: activeView === 'PLINKO' ? 700 : 500,
+                                fontSize: '0.9rem',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.15s'
+                            }}
+                        >
+                            <span style={{ fontSize: '1.2rem', minWidth: '24px', textAlign: 'center' }}>🔴</span>
+                            {isOpen && (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                    <span>Stake Plinko</span>
+                                    <span className="stake-badge stake-badge-original">1000×</span>
+                                </div>
+                            )}
+                        </button>
+
+                        {/* Gates of Olympus 1000 */}
+                        <button
+                            onClick={() => onSelectView('GATES')}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '14px',
+                                width: '100%',
+                                padding: '10px 14px',
+                                borderRadius: 'var(--radius-md)',
+                                border: 'none',
+                                background: activeView === 'GATES' ? 'var(--bg-elevated)' : 'transparent',
+                                color: activeView === 'GATES' ? 'var(--stake-green)' : 'var(--text-white)',
+                                fontWeight: activeView === 'GATES' ? 700 : 500,
+                                fontSize: '0.9rem',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.15s'
+                            }}
+                        >
+                            <span style={{ fontSize: '1.2rem', minWidth: '24px', textAlign: 'center' }}>⚡</span>
+                            {isOpen && (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                    <span>Gates of Olympus</span>
+                                    <span className="stake-badge stake-badge-vip">HOT</span>
+                                </div>
+                            )}
+                        </button>
+
+                        {/* Sweet Bonanza */}
+                        <button
+                            onClick={() => onSelectView('SWEET_BONANZA')}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '14px',
+                                width: '100%',
+                                padding: '10px 14px',
+                                borderRadius: 'var(--radius-md)',
+                                border: 'none',
+                                background: activeView === 'SWEET_BONANZA' ? 'var(--bg-elevated)' : 'transparent',
+                                color: activeView === 'SWEET_BONANZA' ? 'var(--stake-green)' : 'var(--text-white)',
+                                fontWeight: activeView === 'SWEET_BONANZA' ? 700 : 500,
+                                fontSize: '0.9rem',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'all 0.15s'
+                            }}
+                        >
+                            <span style={{ fontSize: '1.2rem', minWidth: '24px', textAlign: 'center' }}>🍭</span>
+                            {isOpen && (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                    <span>Sweet Bonanza</span>
+                                    <span className="stake-badge stake-badge-original">100×</span>
                                 </div>
                             )}
                         </button>
